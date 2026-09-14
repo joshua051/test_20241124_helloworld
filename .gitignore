@@ -8,6 +8,10 @@
 [Mm]emoryCaptures/
 Recordings/
 ValidationArtifacts/
+LocalData/
+*.sqlite
+*.sqlite3
+*.db
 .vs/
 .idea/
 .gradle/
