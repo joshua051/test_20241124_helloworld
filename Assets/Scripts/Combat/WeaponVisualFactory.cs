@@ -1,3 +1,4 @@
+using IronSand.Art;
 using UnityEngine;
 
 namespace IronSand.Combat
@@ -6,23 +7,19 @@ namespace IronSand.Combat
     {
         public static GameObject CreatePlaceholder(Transform parent, WeaponArchetype archetype, Vector3 localPosition)
         {
-            if (parent == null || WeaponCatalog.Get(archetype).MaxDurability <= 0)
+            if (parent == null || WeaponCatalog.Get(archetype).MaxDurability <= 0) return null;
+            if (archetype == WeaponArchetype.Sword)
             {
-                return null;
+                GameObject imported = ImportedGladiatorVisual.CreateSword(parent, localPosition);
+                if (imported != null) return imported;
             }
-
-            PrimitiveType primitive = archetype == WeaponArchetype.Mace
-                ? PrimitiveType.Sphere
-                : archetype == WeaponArchetype.Spear
-                    ? PrimitiveType.Cylinder
-                    : PrimitiveType.Cube;
-
+            PrimitiveType primitive = archetype == WeaponArchetype.Mace ? PrimitiveType.Sphere
+                : archetype == WeaponArchetype.Spear ? PrimitiveType.Cylinder : PrimitiveType.Cube;
             GameObject visual = GameObject.CreatePrimitive(primitive);
             visual.name = $"WeaponVisual_{archetype}";
             visual.transform.SetParent(parent, false);
             visual.transform.localPosition = localPosition;
             ApplyShape(visual.transform, archetype);
-
             Collider collider = visual.GetComponent<Collider>();
             if (collider != null)
             {
@@ -30,10 +27,8 @@ namespace IronSand.Combat
                 if (Application.isPlaying) Object.Destroy(collider);
                 else Object.DestroyImmediate(collider);
             }
-
             return visual;
         }
-
         private static void ApplyShape(Transform visual, WeaponArchetype archetype)
         {
             switch (archetype)
