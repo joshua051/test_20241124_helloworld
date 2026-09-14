@@ -20,17 +20,22 @@ namespace IronSand.Player
         public void SetVisualParent(Transform parent) { visualParent = parent != null ? parent : transform; RefreshVisual(); }
         public bool TryPickupNearest(Vector3 origin, float radius, Vector3 dropPosition)
         {
-            if (radius <= 0f) return false;
+            if (!Finite(radius) || radius <= 0f || !Finite(origin) || !Finite(dropPosition)) return false;
             Collider[] hits = Physics.OverlapSphere(origin, radius, ~0, QueryTriggerInteraction.Collide); WeaponPickup nearest = null; float bestSqrDistance = radius * radius;
             foreach (Collider hit in hits)
             {
-                WeaponPickup pickup = hit.GetComponentInParent<WeaponPickup>(); if (pickup == null || pickup.IsConsumed) continue;
+                WeaponPickup pickup = hit.GetComponentInParent<WeaponPickup>(); if (pickup == null || !pickup.IsAvailable) continue;
                 float sqrDistance = (pickup.transform.position - origin).sqrMagnitude; if (sqrDistance > bestSqrDistance) continue;
                 if (CombatQueries.WorldBlocks(origin, pickup.transform.position)) continue; bestSqrDistance = sqrDistance; nearest = pickup;
             }
-            if (nearest == null || !nearest.TryClaim(out WeaponArchetype newWeapon, out int newDurability)) return false;
+            if (nearest == null) return false;
+            // The selected pickup already passed the reach and world-occlusion checks.
+            // Use its accessible position if the requested drop would cross scenery.
+            Vector3 safeDrop = CombatQueries.WorldBlocks(origin, dropPosition)
+                ? nearest.transform.position : dropPosition;
+            if (!nearest.TryClaim(out WeaponArchetype newWeapon, out int newDurability)) return false;
             WeaponArchetype oldWeapon = CurrentWeapon; int oldDurability = Durability; Equip(newWeapon, newDurability);
-            if (oldWeapon != WeaponArchetype.Unarmed && oldDurability > 0 && !CombatQueries.WorldBlocks(origin, dropPosition)) WeaponPickup.Spawn(dropPosition, oldWeapon, oldDurability);
+            if (oldWeapon != WeaponArchetype.Unarmed && oldDurability > 0) WeaponPickup.Spawn(safeDrop, oldWeapon, oldDurability);
             TelemetryRecorder.RecordEvent("weapon_pickup", name, nearest.name, newWeapon, null, null, null, transform.position,
                 $"{{\"new_durability\":{newDurability},\"old_weapon\":\"{oldWeapon}\",\"old_durability\":{oldDurability}}}");
             return true;
@@ -57,12 +62,23 @@ namespace IronSand.Player
         public void EquipFresh(WeaponArchetype archetype) { WeaponStats stats = WeaponCatalog.Get(archetype); Equip(archetype, stats.MaxDurability); }
         public void Equip(WeaponArchetype archetype, int durability)
         {
-            if (archetype == WeaponArchetype.Unarmed || durability <= 0)
+            if (WeaponCatalog.Get(archetype).MaxDurability <= 0 || durability <= 0)
             { CurrentWeapon = WeaponArchetype.Unarmed; Durability = 0; RefreshVisual(); LoadoutChanged?.Invoke(CurrentWeapon, Durability, MaxDurability); return; }
             WeaponStats stats = WeaponCatalog.Get(archetype); CurrentWeapon = archetype; Durability = Mathf.Clamp(durability, 1, stats.MaxDurability); RefreshVisual(); LoadoutChanged?.Invoke(CurrentWeapon, Durability, MaxDurability);
             TelemetryRecorder.RecordEvent("weapon_equip", name, null, CurrentWeapon, null, null, null, transform.position,
                 $"{{\"durability\":{Durability},\"max_durability\":{MaxDurability}}}");
         }
-        private void RefreshVisual() { if (weaponVisual != null) Destroy(weaponVisual); weaponVisual = WeaponVisualFactory.CreatePlaceholder(visualParent != null ? visualParent : transform, CurrentWeapon, visualLocalPosition); }
+        private void RefreshVisual()
+        {
+            if (weaponVisual != null)
+            {
+                weaponVisual.SetActive(false);
+                if (Application.isPlaying) Destroy(weaponVisual);
+                else DestroyImmediate(weaponVisual);
+            }
+            weaponVisual = WeaponVisualFactory.CreatePlaceholder(visualParent != null ? visualParent : transform, CurrentWeapon, visualLocalPosition);
+        }
+        private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
+        private static bool Finite(Vector3 value) => Finite(value.x) && Finite(value.y) && Finite(value.z);
     }
 }

@@ -6,7 +6,7 @@ namespace IronSand.Combat
     {
         public static GameObject CreatePlaceholder(Transform parent, WeaponArchetype archetype, Vector3 localPosition)
         {
-            if (parent == null || archetype == WeaponArchetype.Unarmed)
+            if (parent == null || WeaponCatalog.Get(archetype).MaxDurability <= 0)
             {
                 return null;
             }
@@ -27,7 +27,8 @@ namespace IronSand.Combat
             if (collider != null)
             {
                 collider.enabled = false;
-                Object.Destroy(collider);
+                if (Application.isPlaying) Object.Destroy(collider);
+                else Object.DestroyImmediate(collider);
             }
 
             return visual;

@@ -34,8 +34,17 @@ namespace IronSand.Combat
         public bool LastPoiseBroken { get; private set; }
         protected virtual void Awake()
         {
-            health = Mathf.Clamp(health, 0f, maxHealth);
-            poise = new PoiseState(Mathf.Max(1f, maxPoise), Mathf.Max(0f, poiseRecoveryDelay), Mathf.Max(0f, poiseRecoveryPerSecond));
+            // Serialized Min/Range attributes are not runtime input validation.
+            maxHealth = Finite(maxHealth) ? Mathf.Max(1f, maxHealth) : 100f;
+            health = Finite(health) ? Mathf.Clamp(health, 0f, maxHealth) : maxHealth;
+            hitStunSeconds = Finite(hitStunSeconds) ? Mathf.Max(0f, hitStunSeconds) : 0.2f;
+            maxPoise = Finite(maxPoise) ? Mathf.Max(1f, maxPoise) : 85f;
+            poiseRecoveryDelay = Finite(poiseRecoveryDelay) ? Mathf.Max(0f, poiseRecoveryDelay) : 1.1f;
+            poiseRecoveryPerSecond = Finite(poiseRecoveryPerSecond) ? Mathf.Max(0f, poiseRecoveryPerSecond) : 24f;
+            executionHealthRatio = Finite(executionHealthRatio) ? Mathf.Clamp(executionHealthRatio, 0.05f, 0.9f) : 0.24f;
+            executionReadySeconds = Finite(executionReadySeconds) ? Mathf.Max(0.25f, executionReadySeconds) : 3.5f;
+            IsDead = health <= 0f;
+            poise = new PoiseState(maxPoise, poiseRecoveryDelay, poiseRecoveryPerSecond);
         }
         protected virtual void Update()
         {
@@ -49,7 +58,7 @@ namespace IronSand.Combat
         public virtual ImpactResult ReceiveImpact(CombatImpact impact)
         {
             if (IsDead || (!impact.Execution && IsInvulnerable)) return ImpactResult.Ignored;
-            if (!Finite(impact.Damage) || !Finite(impact.PoiseDamage) || !Finite(impact.StunMultiplier)) return ImpactResult.Ignored;
+            if (!Finite(impact.Damage) || !Finite(impact.PoiseDamage) || !Finite(impact.StunMultiplier) || !Finite(impact.Knockback)) return ImpactResult.Ignored;
             if (impact.Damage <= 0f && impact.PoiseDamage <= 0f && !impact.Execution) return ImpactResult.Ignored;
             float previousHealth = health;
             float previousPoise = Poise;
@@ -95,5 +104,6 @@ namespace IronSand.Combat
         protected abstract void OnDamaged(Vector3 knockback);
         protected abstract void OnDeath();
         private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
+        private static bool Finite(Vector3 value) => Finite(value.x) && Finite(value.y) && Finite(value.z);
     }
 }

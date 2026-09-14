@@ -14,6 +14,8 @@ namespace IronSand.Combat
         public WeaponArchetype Archetype => archetype;
         public int RemainingDurability => remainingDurability;
         public bool IsConsumed => consumed;
+        public bool IsAvailable => !consumed && isActiveAndEnabled && remainingDurability > 0
+            && WeaponCatalog.Get(archetype).MaxDurability > 0;
         private void Awake() { baseY = transform.position.y; phase = Random.value * Mathf.PI * 2f; }
         private void Update()
         {
@@ -25,10 +27,13 @@ namespace IronSand.Combat
         }
         public bool Configure(WeaponArchetype value, int durability = -1)
         {
-            archetype = value == WeaponArchetype.Unarmed ? WeaponArchetype.Sword : value;
-            WeaponStats stats = WeaponCatalog.Get(archetype);
-            if (durability == 0) { remainingDurability = 0; return false; }
-            remainingDurability = durability < 0 ? stats.MaxDurability : Mathf.Clamp(durability, 1, stats.MaxDurability);
+            if (consumed) return false;
+            WeaponStats stats = WeaponCatalog.Get(value);
+            if (stats.MaxDurability <= 0 || durability == 0 || durability < -1)
+            { archetype = WeaponArchetype.Unarmed; remainingDurability = 0; return false; }
+            archetype = value;
+            // Only the explicit -1 sentinel means a fresh pickup.
+            remainingDurability = durability == -1 ? stats.MaxDurability : Mathf.Min(durability, stats.MaxDurability);
             gameObject.name = $"Pickup_{archetype}";
             return true;
         }
@@ -36,7 +41,7 @@ namespace IronSand.Combat
         {
             claimedArchetype = WeaponArchetype.Unarmed;
             claimedDurability = 0;
-            if (consumed || remainingDurability <= 0) return false;
+            if (!IsAvailable) return false;
             consumed = true;
             claimedArchetype = archetype;
             claimedDurability = remainingDurability;
@@ -48,7 +53,7 @@ namespace IronSand.Combat
         }
         public static WeaponPickup Spawn(Vector3 position, WeaponArchetype archetype, int durability = -1)
         {
-            if (archetype == WeaponArchetype.Unarmed || durability == 0) return null;
+            if (WeaponCatalog.Get(archetype).MaxDurability <= 0 || durability == 0 || durability < -1) return null;
             GameObject root = GameObject.CreatePrimitive(PrimitiveType.Cube);
             root.transform.position = position;
             root.transform.localScale = GetPickupScale(archetype);
@@ -56,7 +61,13 @@ namespace IronSand.Combat
             if (collider != null) collider.isTrigger = true;
             WeaponPickup pickup = root.AddComponent<WeaponPickup>();
             pickup.baseY = position.y;
-            if (!pickup.Configure(archetype, durability)) { Destroy(root); return null; }
+            if (!pickup.Configure(archetype, durability))
+            {
+                root.SetActive(false);
+                if (Application.isPlaying) Destroy(root);
+                else DestroyImmediate(root);
+                return null;
+            }
             return pickup;
         }
         public static Vector3 GetPickupScale(WeaponArchetype archetype) => archetype switch
