@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/Scripts/Combat/AttackKind.cs" Link="Source/AttackKind.cs" />
+    <Compile Include="../../Assets/Scripts/Combat/AttackProfile.cs" Link="Source/AttackProfile.cs" />
+    <Compile Include="../../Assets/Scripts/Combat/AttackTimeline.cs" Link="Source/AttackTimeline.cs" />
+    <Compile Include="../../Assets/Scripts/Combat/DodgeState.cs" Link="Source/DodgeState.cs" />
+    <Compile Include="../../Assets/Scripts/Combat/ExecutionState.cs" Link="Source/ExecutionState.cs" />
+    <Compile Include="../../Assets/Scripts/Combat/GuardState.cs" Link="Source/GuardState.cs" />
+    <Compile Include="../../Assets/Scripts/Combat/PoiseState.cs" Link="Source/PoiseState.cs" />
+    <Compile Include="../../Assets/Scripts/Combat/WeaponArchetype.cs" Link="Source/WeaponArchetype.cs" />
+    <Compile Include="../../Assets/Scripts/Combat/WeaponCatalog.cs" Link="Source/WeaponCatalog.cs" />
+    <Compile Include="../../Assets/Scripts/Scoring/StyleScoreModel.cs" Link="Source/StyleScoreModel.cs" />
+  </ItemGroup>
+</Project>

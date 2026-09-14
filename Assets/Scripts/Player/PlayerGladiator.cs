@@ -48,6 +48,7 @@ namespace IronSand.Player
         private WeaponArchetype currentAttackWeapon;
         private WeaponStats currentAttackStats;
         private bool durabilityConsumedThisAttack;
+        private bool executionStrikeApplied;
 
         public bool Guarding => guard != null && guard.IsGuarding;
         public bool IsDodging => dodge.IsActive;
@@ -96,13 +97,17 @@ namespace IronSand.Player
             Vector3 move = ReadMoveDirection();
             if (execution.IsActive)
             {
-                UpdateExecution(move);
+                UpdateExecution();
                 return;
             }
-            float rootMotionDelta = attack.IsRunning ? TickAttack() : 0f;
+
+            bool wasAttacking = attack.IsRunning;
+            AttackProfile movementAttackProfile = currentAttackProfile;
+            float rootMotionDelta = wasAttacking ? TickAttack() : 0f;
             bool wasDodging = dodge.IsActive;
             float dodgeSeconds = dodge.Tick(Time.deltaTime);
-            bool busy = IsStunned || attack.IsRunning || wasDodging;
+            bool busy = IsStunned || wasAttacking || wasDodging;
+
             if (!busy)
             {
                 if (Input.GetKeyDown(KeyCode.Q)) guard.Begin(Time.time);
@@ -110,12 +115,13 @@ namespace IronSand.Player
                 else if (!Input.GetKey(KeyCode.Q)) guard.End();
             }
             else guard.End();
-            bool free = !IsStunned && !attack.IsRunning && !dodge.IsActive && !Guarding;
+
+            bool free = !IsStunned && !wasAttacking && !attack.IsRunning && !dodge.IsActive && !Guarding;
             if (free)
             {
                 if (Input.GetKeyDown(KeyCode.F) && TryStartExecution())
                 {
-                    UpdateExecution(move);
+                    UpdateExecution();
                     return;
                 }
                 if (Input.GetKeyDown(KeyCode.G)) TryThrowWeapon();
@@ -124,7 +130,8 @@ namespace IronSand.Player
                 else if (Input.GetMouseButtonDown(0)) StartAttack(AttackKind.Light);
                 else if (Input.GetMouseButtonDown(1)) StartAttack(AttackKind.Heavy);
             }
-            Move(move, dodgeSeconds, wasDodging, rootMotionDelta);
+
+            Move(move, dodgeSeconds, wasDodging, wasAttacking, rootMotionDelta, movementAttackProfile);
             rig?.SetMotion(move.magnitude, Guarding);
 #endif
         }
@@ -196,7 +203,8 @@ namespace IronSand.Player
                 if (toEnemy.sqrMagnitude < 0.001f) continue;
                 float baseDamage = heavy ? heavyDamage : lightDamage;
                 float weaponDamage = heavy ? stats.HeavyDamageMultiplier : stats.LightDamageMultiplier;
-                CombatImpact impact = new(this, baseDamage * weaponDamage * currentAttackProfile.DamageMultiplier,
+                CombatImpact impact = new(this,
+                    baseDamage * weaponDamage * currentAttackProfile.DamageMultiplier,
                     currentAttackProfile.PoiseDamage * stats.StunMultiplier,
                     toEnemy.normalized * (heavy ? 3.5f : 2.1f),
                     stats.StunMultiplier * (heavy ? 1.45f : 1f));
@@ -221,6 +229,7 @@ namespace IronSand.Player
             if (delta.sqrMagnitude > executionRange * executionRange || CombatQueries.WorldBlocks(transform.position, lockTarget.transform.position)) return false;
             if (!execution.TryStart(1.10f, 0.56f)) return false;
             executionTarget = lockTarget;
+            executionStrikeApplied = false;
             attack.Cancel();
             dodge.CancelActive();
             guard.End();
@@ -228,45 +237,62 @@ namespace IronSand.Player
             return true;
         }
 
-        private void UpdateExecution(Vector3 move)
+        private void UpdateExecution()
         {
-            if (executionTarget == null || executionTarget.IsDead)
+            if (executionTarget == null || (executionTarget.IsDead && !executionStrikeApplied))
             {
-                execution.Cancel();
-                ClearExecutionPose();
+                AbortExecution();
                 return;
             }
+
             Vector3 delta = executionTarget.transform.position - transform.position;
             delta.y = 0f;
             if (delta.sqrMagnitude > 0.01f)
             {
                 transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(delta.normalized), 1f - Mathf.Exp(-18f * Time.deltaTime));
-                if (delta.magnitude > 1.25f && controller.enabled)
+                if (!executionStrikeApplied && delta.magnitude > 1.25f && controller.enabled)
                     controller.Move(delta.normalized * Mathf.Min(2.5f * Time.deltaTime, delta.magnitude - 1.25f));
             }
+
             ExecutionTick tick = execution.Tick(Time.deltaTime);
             rig?.SetExecution(true, tick.Progress);
             executionTarget.SetExecutionPose(tick.Progress);
             ApplyGravityOnly();
-            if (tick.StrikeNow && executionTarget != null && !executionTarget.IsDead)
+
+            if (tick.StrikeNow && !executionStrikeApplied && !executionTarget.IsDead)
             {
                 WeaponArchetype weapon = weaponController.CurrentWeapon;
-                executionTarget.ReceiveImpact(new CombatImpact(this, executionTarget.MaxHealth + 999f, executionTarget.MaxPoise + 999f,
-                    transform.forward * 2f, 3f, true, true));
-                arenaDirector?.RegisterPlayerHit(AttackKind.Execution, weapon, true, 4);
-                CombatFeedbackSystem.EmitExecution(executionTarget.transform.position + Vector3.up * 0.35f);
+                ImpactResult result = executionTarget.ReceiveImpact(new CombatImpact(this,
+                    executionTarget.MaxHealth + 999f,
+                    executionTarget.MaxPoise + 999f,
+                    transform.forward * 2f,
+                    3f,
+                    true,
+                    true));
+                executionStrikeApplied = result.Killed;
+                if (result.Killed)
+                {
+                    arenaDirector?.RegisterPlayerHit(AttackKind.Execution, weapon, true, 4);
+                    CombatFeedbackSystem.EmitExecution(executionTarget.transform.position + Vector3.up * 0.35f);
+                }
             }
+
             if (tick.Completed)
-            {
-                ClearExecutionPose();
-                executionTarget = null;
-            }
+                CompleteExecution();
         }
 
-        private void ClearExecutionPose()
+        private void CompleteExecution()
         {
             rig?.ClearExecution();
             executionTarget?.ClearExecutionPose();
+            executionTarget = null;
+            executionStrikeApplied = false;
+        }
+
+        private void AbortExecution()
+        {
+            execution.Cancel();
+            CompleteExecution();
         }
 
         private void TryStartDodge(Vector3 move, ref bool wasDodging)
@@ -299,7 +325,7 @@ namespace IronSand.Player
             return Vector3.ClampMagnitude(forward * y + right * x, 1f);
         }
 
-        private void Move(Vector3 move, float dodgeSeconds, bool wasDodging, float rootMotionDelta)
+        private void Move(Vector3 move, float dodgeSeconds, bool wasDodging, bool wasAttacking, float rootMotionDelta, AttackProfile movementAttackProfile)
         {
             Vector3 displacement = Vector3.zero;
             if (!IsStunned)
@@ -310,8 +336,8 @@ namespace IronSand.Player
                     transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(facing), 1f - Mathf.Exp(-rotationSharpness * Time.deltaTime));
                 if (wasDodging)
                     displacement = dodgeDirection * (dodgeDistance / Mathf.Max(0.05f, dodgeDuration)) * dodgeSeconds;
-                else if (attack.IsRunning)
-                    displacement = transform.forward * (currentAttackProfile.RootMotionDistance * rootMotionDelta) + move * (moveSpeed * 0.12f * Time.deltaTime);
+                else if (wasAttacking)
+                    displacement = transform.forward * (movementAttackProfile.RootMotionDistance * rootMotionDelta) + move * (moveSpeed * 0.12f * Time.deltaTime);
                 else
                 {
                     float speed = Input.GetKey(KeyCode.LeftShift) && !Guarding ? sprintSpeed : moveSpeed;
@@ -357,7 +383,8 @@ namespace IronSand.Player
         {
             if (lockTarget == null) return;
             Vector3 delta = lockTarget.transform.position - transform.position;
-            if (lockTarget.IsDead || delta.sqrMagnitude > lockOnRange * lockOnRange * 1.8f) lockTarget = null;
+            if (lockTarget.IsDead || delta.sqrMagnitude > lockOnRange * lockOnRange * 1.8f)
+                lockTarget = null;
         }
 
         private void TryPickupWeapon()
@@ -372,7 +399,8 @@ namespace IronSand.Player
             if (lockTarget == null) return;
             Vector3 delta = lockTarget.transform.position - transform.position;
             delta.y = 0f;
-            if (delta.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(delta.normalized);
+            if (delta.sqrMagnitude > 0.01f)
+                transform.rotation = Quaternion.LookRotation(delta.normalized);
         }
 
         protected override void OnDamaged(Vector3 knockback)
@@ -380,8 +408,7 @@ namespace IronSand.Player
             guard?.End();
             attack.Cancel();
             dodge.CancelActive();
-            execution.Cancel();
-            ClearExecutionPose();
+            if (execution.IsActive) AbortExecution();
             rig?.ClearAttack();
             rig?.TriggerHit(LastPoiseBroken);
             if (controller != null && controller.enabled && knockback.sqrMagnitude > 0f)
@@ -394,8 +421,7 @@ namespace IronSand.Player
             lockTarget = null;
             attack.Cancel();
             dodge.CancelActive();
-            execution.Cancel();
-            ClearExecutionPose();
+            if (execution.IsActive) AbortExecution();
             rig?.TriggerHit(true);
         }
     }

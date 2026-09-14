@@ -12,6 +12,7 @@ Recordings/
 .gradle/
 ExportedObj/
 *.csproj
+!tools/CombatRulesHarness/CombatRulesHarness.csproj
 *.sln
 *.user
 *.pidb

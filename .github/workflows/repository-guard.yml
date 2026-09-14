@@ -18,3 +18,5 @@ jobs:
           persist-credentials: false
       - name: Validate repository invariants
         run: python3 tools/repository_guard.py
+      - name: Compile and run pure combat rules
+        run: dotnet run --project tools/CombatRulesHarness/CombatRulesHarness.csproj --configuration Release

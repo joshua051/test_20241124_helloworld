@@ -6,7 +6,7 @@ namespace IronSand.Combat
     {
         private Transform torso, head, leftArm, rightArm, leftLeg, rightLeg, shield, weaponSocket;
         private bool built, playerTeam, guarding, executionActor;
-        private float locomotion, attackProgress, hitReaction, vulnerableAmount, executionProgress;
+        private float locomotion, attackProgress, hitReaction, vulnerableAmount, executionProgress, walkPhase;
         private CombatPhase attackPhase;
         private AttackKind attackKind;
         public Transform WeaponSocket { get { EnsureBuilt(); return weaponSocket; } }
@@ -22,8 +22,12 @@ namespace IronSand.Combat
         private void LateUpdate()
         {
             EnsureBuilt();
-            hitReaction = Mathf.MoveTowards(hitReaction, 0f, Time.deltaTime * 4.5f);
-            float walk = Mathf.Sin(Time.time * 9f) * 24f * locomotion;
+            if (!CombatFreezeSystem.IsFrozen)
+            {
+                hitReaction = Mathf.MoveTowards(hitReaction, 0f, Time.deltaTime * 4.5f);
+                walkPhase += Time.deltaTime * 9f;
+            }
+            float walk = Mathf.Sin(walkPhase) * 24f * locomotion;
             float torsoYaw = 0f;
             float torsoRoll = -hitReaction * 16f - vulnerableAmount * 12f;
             float rightX = -12f, rightZ = -8f, leftX = -8f, leftZ = 8f;
