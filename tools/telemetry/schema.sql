@@ -46,6 +46,23 @@ CREATE TABLE IF NOT EXISTS balance_parameters (
   UNIQUE(commit_sha, system, entity, parameter)
 );
 
+CREATE TABLE IF NOT EXISTS balance_experiments (
+  id INTEGER PRIMARY KEY,
+  created_at TEXT NOT NULL,
+  baseline_commit TEXT NOT NULL,
+  candidate_commit TEXT,
+  system TEXT NOT NULL,
+  entity TEXT NOT NULL,
+  parameter TEXT NOT NULL,
+  baseline_value TEXT,
+  candidate_value TEXT,
+  hypothesis TEXT NOT NULL,
+  evidence_query TEXT,
+  status TEXT NOT NULL DEFAULT 'proposed',
+  outcome TEXT,
+  reverted INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS combat_sessions (
   session_id TEXT PRIMARY KEY,
   commit_sha TEXT NOT NULL,
