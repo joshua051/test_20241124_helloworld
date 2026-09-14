@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "status": "ACTUAL_BLENDER_RENDER_PUBLISHED_UNITY_NOT_RUN",
+  "repository": "joshua051/test_20241124_helloworld",
+  "branch": "feat/arena-prototype-v0.1.0",
+  "parent_commit": "b3ec363bfe09eda578b3e6ec60aec89fe408a4b6",
+  "render_source_commit": "c63c7d7ff3fb5b2f1bc8fad8de2d9cc7d7150fde",
+  "render_run_id": 34852977089,
+  "artifact_id": 10351862050,
+  "artifact_sha256": "0418e8a6fed659eccceb52c986f63198fb69d9db748d07bd9283ea8bf175eb16",
+  "model_sha256": "3c2d09fe17dc686f13180f8f33cd5150014f602b05326d90b2b52e5b8eb56ff3",
+  "files": [
+    {
+      "path": "Assets/Resources/Gladiators/Gladiator.json",
+      "bytes": 304208,
+      "sha256": "3c2d09fe17dc686f13180f8f33cd5150014f602b05326d90b2b52e5b8eb56ff3"
+    },
+    {
+      "path": "Assets/Resources/Gladiators/skin.png",
+      "bytes": 202,
+      "sha256": "4ede308fb74a642f7c070bafc950f3f458b837467d3200643ad0088e615d69c2"
+    },
+    {
+      "path": "Assets/Resources/Gladiators/metal2.png",
+      "bytes": 364,
+      "sha256": "337c0cd553af8af1b29bbc9884267399100f9bbba55b2acb2080d582aa4a726a"
+    },
+    {
+      "path": "Assets/Resources/Gladiators/asset_manifest.json",
+      "bytes": 668,
+      "sha256": "6548e132c5305c394c06687d8abab9305f80cfbdca45242c875d113710e366f8"
+    },
+    {
+      "path": "Art/Gladiator/IronSand_Gladiator.fbx",
+      "bytes": 299852,
+      "sha256": "07a7005e9021edfa62ec05ac94235f947ef42d3c2626f6a74226f6b251868d22"
+    },
+    {
+      "path": "Art/Gladiator/IronSand_Gladiator.glb",
+      "bytes": 198756,
+      "sha256": "654c1dd806d86837584bf7d3f823d87fe974fa4ac464d52af644cab959eae73e"
+    },
+    {
+      "path": "Art/Gladiator/IronSand_Gladiator_Stage.blend",
+      "bytes": 2186792,
+      "sha256": "c76c121f4484d7c2d9d08c8f9f9a08f23a9d5ced800bc2b6309a39007c108605"
+    },
+    {
+      "path": "Art/Gladiator/gladiator_guard.png",
+      "bytes": 1675294,
+      "sha256": "67a8869d45202349109c80d62ba2d796ebc54cca84e402533162707ee200d4ec"
+    },
+    {
+      "path": "Art/Gladiator/gladiator_rear.png",
+      "bytes": 1721603,
+      "sha256": "09acca61c76b1b38daafe65cd59a03bf3ae0e9a4b2190d0ba6c0022763b142cc"
+    },
+    {
+      "path": "Art/Gladiator/gladiator_strike.png",
+      "bytes": 1638174,
+      "sha256": "c99a979b7b3434ab88cc240a64c3251719d743d0aab3d5fb60a0c0c91766b512"
+    },
+    {
+      "path": "Art/Gladiator/gladiator_arena.png",
+      "bytes": 1793226,
+      "sha256": "9a3e480ebe8580cb0989d1d754a502249db9c3cd636f3bda87796f1748ca14c0"
+    },
+    {
+      "path": "Art/Gladiator/render_manifest.json",
+      "bytes": 1512,
+      "sha256": "def71837de6f272825811ff44d7e496b20ecf10045345b1684b834a5305660b8"
+    }
+  ]
+}

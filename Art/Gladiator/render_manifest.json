@@ -1,0 +1,50 @@
+{
+  "status": "BLENDER_RENDERED_NOT_UNITY_VALIDATED",
+  "blender_version": "4.0.2",
+  "engine": "Cycles CPU",
+  "samples": 64,
+  "denoising": false,
+  "source_data_sha256": "3c2d09fe17dc686f13180f8f33cd5150014f602b05326d90b2b52e5b8eb56ff3",
+  "bones": 16,
+  "source_credits": [
+    "BlackScorp / Low poly warrior / CC0",
+    "Astarribadebirra / Nando / Gladiator Pack / CC0"
+  ],
+  "files": [
+    {
+      "name": "IronSand_Gladiator.fbx",
+      "bytes": 299852,
+      "sha256": "07a7005e9021edfa62ec05ac94235f947ef42d3c2626f6a74226f6b251868d22"
+    },
+    {
+      "name": "IronSand_Gladiator.glb",
+      "bytes": 198756,
+      "sha256": "654c1dd806d86837584bf7d3f823d87fe974fa4ac464d52af644cab959eae73e"
+    },
+    {
+      "name": "IronSand_Gladiator_Stage.blend",
+      "bytes": 2186792,
+      "sha256": "c76c121f4484d7c2d9d08c8f9f9a08f23a9d5ced800bc2b6309a39007c108605"
+    },
+    {
+      "name": "gladiator_arena.png",
+      "bytes": 1793226,
+      "sha256": "9a3e480ebe8580cb0989d1d754a502249db9c3cd636f3bda87796f1748ca14c0"
+    },
+    {
+      "name": "gladiator_guard.png",
+      "bytes": 1675294,
+      "sha256": "67a8869d45202349109c80d62ba2d796ebc54cca84e402533162707ee200d4ec"
+    },
+    {
+      "name": "gladiator_rear.png",
+      "bytes": 1721603,
+      "sha256": "09acca61c76b1b38daafe65cd59a03bf3ae0e9a4b2190d0ba6c0022763b142cc"
+    },
+    {
+      "name": "gladiator_strike.png",
+      "bytes": 1638174,
+      "sha256": "c99a979b7b3434ab88cc240a64c3251719d743d0aab3d5fb60a0c0c91766b512"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "status": "DATA_VALIDATED_NOT_UNITY_VALIDATED",
+  "archives": {
+    "gladiator-pack.zip": "b341a28b9e777588bd218457ace9c37ce7fa2ec97e16d0690c3cca1da4d281ec",
+    "low-poly-warrior.zip": "7f6ecd8044093b6c8ab2e594224a3524c2510317ae0b8ec6d2cf742877137c04"
+  },
+  "model_sha256": "3c2d09fe17dc686f13180f8f33cd5150014f602b05326d90b2b52e5b8eb56ff3",
+  "bones": 16,
+  "meshes": {
+    "body": {
+      "vertices": 2270,
+      "triangles": 2222
+    },
+    "sword": {
+      "vertices": 258,
+      "triangles": 120
+    },
+    "shield": {
+      "vertices": 322,
+      "triangles": 164
+    }
+  },
+  "bounds_note": "actor feet -1m; not an engine collision test"
+}
