@@ -1,25 +1,22 @@
-# Gladiator asset selection and render acceptance
+# Gladiator asset selection
 
-Request: find an appropriate online gladiator model, apply it to Iron Sand Arena, and render the result.
+Request: find an appropriate online gladiator model, apply it to Iron Sand Arena, and render the actual result.
 
-## Candidate provenance checked on 2026-09-14
+## Selected on 2026-09-14
 
-1. Astarribadebirra / Nando, Gladiator Pack: https://opengameart.org/content/gladiator-pack ; author storefront https://bixer.itch.io/gladiator . Both pages identify CC0. OBJ pack: 15 models and 3 alpha textures. Official attachment: https://opengameart.org/sites/default/files/gladiatorpack.zip . Suitability remains subject to inspecting the actual meshes; not advertised as rigged.
-2. BlackScorp, Low poly warrior: https://opengameart.org/content/low-poly-warrior . CC0, explicitly not rigged, removable armor. Official attachment: https://opengameart.org/sites/default/files/basechar_0.zip .
-3. tomasz0p0, Retiarius Gladiator: https://sketchfab.com/3d-models/retiarius-gladiator-low-poly-3446255227b14a1f83e56b24d619f8e0 . CC Attribution, 8.2k triangles according to the author page; download requires the site's supported download flow. Do not scrape protected viewer geometry.
+1. **BlackScorp, Low poly warrior** — https://opengameart.org/content/low-poly-warrior . CC0; explicitly unrigged. Selected for realistic adult proportions and removable armor. Official attachment: https://opengameart.org/sites/default/files/basechar_0.zip . Actual source inspected; 16-bone prototype skin and grip adaptation added.
+2. **Astarribadebirra / Nando, Gladiator Pack** — https://opengameart.org/content/gladiator-pack ; https://bixer.itch.io/gladiator . Both pages and archive License.txt identify CC0. Selected only its real Gladii.obj and Shield.obj accessories, not its differently proportioned character. Official attachment: https://opengameart.org/sites/default/files/gladiatorpack.zip .
+3. Retiarius Gladiator by tomasz0p0 on Sketchfab was considered but not downloaded or used. No protected viewer geometry was scraped.
 
-No paid purchase, account sign-in bypass, proprietary Capcom content, or scraped preview geometry is authorized by this pipeline. Include source attribution and the applicable license with any assets actually selected.
+No paid purchase, account sign-in bypass, Capcom assets, or downloaded third-party scripts were used. Source hashes and credit/license information are retained in `Assets/Resources/Gladiators/CREDITS.md`.
 
-## Acceptance
+## Execution status
 
-- Download real source files through their permitted download links; record their SHA-256 and contents.
-- Inspect actual geometry and material/texture dependencies before selection.
-- Preserve the existing Combat V2 mechanics, weapon ownership, telemetry, and state-integrity fixes.
-- Apply the selected mesh to the visual layer; never replace working gameplay scripts with an old baseline.
-- Render the actual mesh in a real 3D renderer; label offline renders separately from Unity gameplay evidence.
-- Keep reproducible import/rig/material/render scripts and output manifests.
-- Do not claim Unity import, skinning, physics or PlayMode validation without a real Unity execution.
+- Source selection and permitted download: completed.
+- Actual geometry/UV inspection, scale, prototype skin and grip/socket adaptation: completed for this asset revision.
+- Unity visual-adapter source: committed; engine execution is not verified.
+- Corrected actual Blender render/export: run **34852977089**, source **c63c7d7**, artifact **10351862050**.
+- Committed artifact presence and exact publication revision: see the generated `docs/GLADIATOR_ASSET_RECEIPT.json`. Do not infer publication merely from this planning document.
+- Unity import/compile/PlayMode/standalone and U1-U7: **NOT_RUN**.
 
-## Status
-
-SELECTION_IN_PROGRESS. Candidate pages have been checked; no successful asset import, integration or render is asserted by this document yet. The assistant container's direct source download failed; a permitted connected execution route is being investigated. Existing U1-U7 gates are unchanged.
+See `docs/GLADIATOR_RENDER_REPORT.md` for actual image/export details, the rejected first skinning attempt, corrected finger/weapon handling and remaining visual/engine limits. This selection closes the online-source search; it does not grant production-art or release approval.
