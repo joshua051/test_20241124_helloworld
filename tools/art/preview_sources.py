@@ -1,7 +1,6 @@
 """Run with Blender --background --factory-startup --disable-autoexec --python."""
 import bpy
 import json
-import math
 from pathlib import Path
 from mathutils import Vector
 
@@ -9,10 +8,7 @@ OUT = Path('ArtInspection').resolve()
 source = OUT / 'low-poly-warrior/base-char-male.obj'
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.object.delete(use_global=False)
-if bpy.app.version >= (3, 3, 0):
-    bpy.ops.wm.obj_import(filepath=str(source), forward_axis='NEGATIVE_Z', up_axis='Y')
-else:
-    bpy.ops.import_scene.obj(filepath=str(source), axis_forward='-Z', axis_up='Y')
+bpy.ops.wm.obj_import(filepath=str(source), forward_axis='NEGATIVE_Z', up_axis='Y')
 meshes = [obj for obj in bpy.context.scene.objects if obj.type == 'MESH']
 report = {'renderer': 'Blender Cycles CPU', 'blender_version': bpy.app.version_string, 'source': str(source.name), 'meshes': []}
 for obj in meshes:
@@ -34,8 +30,9 @@ for mat in bpy.data.materials:
 scene = bpy.context.scene
 scene.render.engine = 'CYCLES'
 scene.cycles.device = 'CPU'
-scene.cycles.samples = 24
-scene.cycles.use_denoising = True
+scene.cycles.samples = 40
+# Ubuntu's Blender build omits OpenImageDenoise; do not request an unavailable device.
+scene.cycles.use_denoising = False
 scene.render.resolution_x = 720
 scene.render.resolution_y = 900
 scene.render.resolution_percentage = 100
