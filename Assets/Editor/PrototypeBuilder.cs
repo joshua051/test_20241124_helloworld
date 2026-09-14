@@ -4,6 +4,7 @@ using IronSand.Arena;
 using IronSand.Combat;
 using IronSand.Player;
 using IronSand.Scoring;
+using IronSand.Telemetry;
 using IronSand.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -31,7 +32,7 @@ namespace IronSand.Editor
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); CreateLighting(); ArenaGeometry.Create();
             WeaponPickup.Spawn(new Vector3(-4f, 0.35f, 0f), WeaponArchetype.Axe); WeaponPickup.Spawn(new Vector3(4f, 0.35f, 0f), WeaponArchetype.Spear); WeaponPickup.Spawn(new Vector3(0f, 0.35f, 4f), WeaponArchetype.Mace);
             PlayerGladiator player = CreatePlayer(); CreateCamera(player.transform); GameObject systems = new("ArenaSystems");
-            systems.AddComponent<CombatFreezeSystem>(); systems.AddComponent<CombatFeedbackSystem>(); systems.AddComponent<CrowdFavorSystem>(); systems.AddComponent<CombatStyleSystem>(); systems.AddComponent<ArenaDirector>(); systems.AddComponent<CrowdRewardDirector>(); systems.AddComponent<ArenaSession>(); systems.AddComponent<PrototypeHUD>();
+            systems.AddComponent<CombatFreezeSystem>(); systems.AddComponent<CombatFeedbackSystem>(); systems.AddComponent<CrowdFavorSystem>(); systems.AddComponent<CombatStyleSystem>(); systems.AddComponent<ArenaDirector>(); systems.AddComponent<CrowdRewardDirector>(); systems.AddComponent<ArenaSession>(); systems.AddComponent<TelemetryRecorder>(); systems.AddComponent<PrototypeHUD>();
             if (!EditorSceneManager.SaveScene(scene, ScenePath)) throw new InvalidOperationException("Could not save generated arena scene.");
             var scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes); int index = scenes.FindIndex(entry => entry.path == ScenePath); if (index >= 0) scenes[index] = new EditorBuildSettingsScene(ScenePath, true); else scenes.Add(new EditorBuildSettingsScene(ScenePath, true)); EditorBuildSettings.scenes = scenes.ToArray(); AssetDatabase.SaveAssets();
         }
