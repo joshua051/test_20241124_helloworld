@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using IronSand.Arena;
 using IronSand.Combat;
 using IronSand.Player;
@@ -7,49 +9,66 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 namespace IronSand.Editor
 {
     public static class PrototypeBuilder
     {
-        private const string ScenePath = "Assets/Scenes/ArenaPrototype.unity";
+        public const string ScenePath = "Assets/Scenes/ArenaPrototype.unity";
 
         [MenuItem("Tools/Iron Sand Arena/Rebuild Prototype Arena")]
         public static void RebuildPrototypeArena()
         {
-            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
+                Debug.LogWarning("Exit Play Mode before rebuilding the arena.");
                 return;
             }
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null &&
+                !EditorUtility.DisplayDialog("Rebuild generated arena?",
+                    "This replaces ArenaPrototype.unity. Save a copy first if you edited this generated scene.",
+                    "Rebuild", "Cancel")) return;
+            BuildScene();
+        }
 
+        // Explicit command-line entry point; never invoked on domain load.
+        public static void BuildForValidation()
+        {
+            if (!Application.isBatchMode)
+                throw new InvalidOperationException("BuildForValidation is for Unity -batchmode only.");
             BuildScene();
         }
 
         private static void BuildScene()
         {
             if (!AssetDatabase.IsValidFolder("Assets/Scenes"))
-            {
                 AssetDatabase.CreateFolder("Assets", "Scenes");
-            }
-
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-
             CreateLighting();
-            CreateArenaGeometry();
-            CreateStarterWeapons();
+            ArenaGeometry.Create();
+            WeaponPickup.Spawn(new Vector3(-4f, 0.35f, 0f), WeaponArchetype.Axe);
+            WeaponPickup.Spawn(new Vector3(4f, 0.35f, 0f), WeaponArchetype.Spear);
+            WeaponPickup.Spawn(new Vector3(0f, 0.35f, 4f), WeaponArchetype.Mace);
             PlayerGladiator player = CreatePlayer();
             CreateCamera(player.transform);
-
             GameObject systems = new("ArenaSystems");
             systems.AddComponent<CrowdFavorSystem>();
             systems.AddComponent<CombatStyleSystem>();
             systems.AddComponent<ArenaDirector>();
+            systems.AddComponent<ArenaSession>();
             systems.AddComponent<PrototypeHUD>();
 
-            EditorSceneManager.SaveScene(scene, ScenePath);
+            if (!EditorSceneManager.SaveScene(scene, ScenePath))
+                throw new InvalidOperationException("Could not save generated arena scene.");
+            // Reload-by-path must work in both the Editor and a standalone build.
+            var scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+            int index = scenes.FindIndex(entry => entry.path == ScenePath);
+            if (index >= 0) scenes[index] = new EditorBuildSettingsScene(ScenePath, true);
+            else scenes.Add(new EditorBuildSettingsScene(ScenePath, true));
+            EditorBuildSettings.scenes = scenes.ToArray();
             AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-            EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
         }
 
         private static void CreateLighting()
@@ -61,54 +80,16 @@ namespace IronSand.Editor
             lightObject.transform.rotation = Quaternion.Euler(45f, -35f, 0f);
         }
 
-        private static void CreateArenaGeometry()
-        {
-            GameObject floor = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            floor.name = "ArenaFloor";
-            floor.transform.position = new Vector3(0f, -0.5f, 0f);
-            floor.transform.localScale = new Vector3(14f, 0.5f, 14f);
-
-            const int wallCount = 24;
-            const float radius = 14.5f;
-            for (int i = 0; i < wallCount; i++)
-            {
-                float angle = Mathf.PI * 2f * i / wallCount;
-                GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                wall.name = $"ArenaWall_{i:00}";
-                wall.transform.position = new Vector3(Mathf.Cos(angle) * radius, 1.4f, Mathf.Sin(angle) * radius);
-                wall.transform.rotation = Quaternion.Euler(0f, -angle * Mathf.Rad2Deg, 0f);
-                wall.transform.localScale = new Vector3(3.9f, 3f, 0.8f);
-            }
-
-            for (int i = 0; i < 8; i++)
-            {
-                float angle = Mathf.PI * 2f * i / 8f;
-                GameObject pillar = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                pillar.name = $"Pillar_{i:00}";
-                pillar.transform.position = new Vector3(Mathf.Cos(angle) * 12.2f, 1.3f, Mathf.Sin(angle) * 12.2f);
-                pillar.transform.localScale = new Vector3(0.55f, 1.8f, 0.55f);
-            }
-        }
-
-        private static void CreateStarterWeapons()
-        {
-            WeaponPickup.Spawn(new Vector3(-4f, 0.35f, 0f), WeaponArchetype.Axe);
-            WeaponPickup.Spawn(new Vector3(4f, 0.35f, 0f), WeaponArchetype.Spear);
-            WeaponPickup.Spawn(new Vector3(0f, 0.35f, 4f), WeaponArchetype.Mace);
-        }
-
         private static PlayerGladiator CreatePlayer()
         {
             GameObject root = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             root.name = "PlayerGladiator";
-            root.transform.position = new Vector3(0f, 1f, -3f);
-
+            root.transform.position = new Vector3(0f, 1.1f, -3f);
             Object.DestroyImmediate(root.GetComponent<Collider>());
             CharacterController controller = root.AddComponent<CharacterController>();
             controller.height = 2f;
             controller.radius = 0.45f;
             controller.center = Vector3.zero;
-
             return root.AddComponent<PlayerGladiator>();
         }
 
@@ -118,10 +99,9 @@ namespace IronSand.Editor
             Camera camera = cameraObject.AddComponent<Camera>();
             camera.tag = "MainCamera";
             camera.nearClipPlane = 0.05f;
+            cameraObject.AddComponent<AudioListener>();
             cameraObject.transform.position = new Vector3(0f, 4f, -9f);
-
-            ThirdPersonArenaCamera follow = cameraObject.AddComponent<ThirdPersonArenaCamera>();
-            follow.SetTarget(target);
+            cameraObject.AddComponent<ThirdPersonArenaCamera>().SetTarget(target);
         }
     }
 }
