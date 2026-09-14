@@ -3,7 +3,7 @@
   "status": "ACTUAL_BLENDER_RENDER_PUBLISHED_UNITY_NOT_RUN",
   "repository": "joshua051/test_20241124_helloworld",
   "branch": "feat/arena-prototype-v0.1.0",
-  "parent_commit": "b3ec363bfe09eda578b3e6ec60aec89fe408a4b6",
+  "parent_commit": "45dda659673a5bdc8f3238d31bc4d863bec5185b",
   "render_source_commit": "c63c7d7ff3fb5b2f1bc8fad8de2d9cc7d7150fde",
   "render_run_id": 34852977089,
   "artifact_id": 10351862050,
