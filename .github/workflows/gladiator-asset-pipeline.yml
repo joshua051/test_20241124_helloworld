@@ -1,0 +1,31 @@
+name: Gladiator Asset Pipeline
+
+on:
+  push:
+    branches: [feat/arena-prototype-v0.1.0]
+    paths:
+      - 'tools/art/**'
+      - '.github/workflows/gladiator-asset-pipeline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Download CC0 candidates and inspect archive contents
+        run: python3 tools/art/inspect_sources.py
+      - name: Preserve actual downloaded assets and inventory
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: gladiator-source-inspection
+          path: ArtInspection/
+          if-no-files-found: error
+          retention-days: 14
