@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using IronSand.Arena;
 using IronSand.Combat;
 using IronSand.Enemy;
@@ -5,7 +6,7 @@ using UnityEngine;
 
 namespace IronSand.Player
 {
-    [RequireComponent(typeof(CharacterController))]
+    [RequireComponent(typeof(CharacterController), typeof(PlayerWeaponController))]
     public sealed class PlayerGladiator : Combatant
     {
         [Header("Movement")]
@@ -23,20 +24,27 @@ namespace IronSand.Player
         [SerializeField, Range(0f, 1f)] private float guardDamageMultiplier = 0.3f;
         [SerializeField, Min(0f)] private float dodgeDistance = 4.5f;
         [SerializeField, Min(0f)] private float dodgeInvulnerability = 0.3f;
+        [SerializeField, Min(1f)] private float lockOnRange = 14f;
+        [SerializeField, Min(0.5f)] private float pickupRadius = 2.1f;
 
         private CharacterController controller;
+        private PlayerWeaponController weaponController;
         private Camera gameplayCamera;
         private ArenaDirector arenaDirector;
         private float verticalVelocity;
         private float attackCooldownRemaining;
         private bool guarding;
+        private EnemyGladiator lockTarget;
 
         public bool Guarding => guarding;
+        public EnemyGladiator LockTarget => lockTarget;
+        public PlayerWeaponController WeaponController => weaponController;
 
         protected override void Awake()
         {
             base.Awake();
             controller = GetComponent<CharacterController>();
+            weaponController = GetComponent<PlayerWeaponController>();
         }
 
         private void Start()
@@ -57,10 +65,22 @@ namespace IronSand.Player
                 return;
             }
 
+            ValidateLockTarget();
+
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
+            }
+
+            if (Input.GetKeyDown(KeyCode.Tab))
+            {
+                ToggleLockOn();
+            }
+
+            if (!IsStunned && Input.GetKeyDown(KeyCode.E))
+            {
+                TryPickupWeapon();
             }
 
             guarding = Input.GetKey(KeyCode.Q) && !IsStunned;
@@ -70,11 +90,11 @@ namespace IronSand.Player
             {
                 if (Input.GetMouseButtonDown(0))
                 {
-                    PerformAttack(lightDamage, 1, 1f);
+                    PerformAttack(AttackKind.Light);
                 }
                 else if (Input.GetMouseButtonDown(1))
                 {
-                    PerformAttack(heavyDamage, 3, 1.5f);
+                    PerformAttack(AttackKind.Heavy);
                 }
             }
 
@@ -112,9 +132,16 @@ namespace IronSand.Player
             Vector3 move = forward * input.y + right * input.x;
             float speed = Input.GetKey(KeyCode.LeftShift) ? sprintSpeed : moveSpeed;
 
-            if (move.sqrMagnitude > 0.01f)
+            Vector3 facing = move;
+            if (lockTarget != null)
             {
-                Quaternion targetRotation = Quaternion.LookRotation(move, Vector3.up);
+                facing = lockTarget.transform.position - transform.position;
+                facing.y = 0f;
+            }
+
+            if (facing.sqrMagnitude > 0.01f)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(facing.normalized, Vector3.up);
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 1f - Mathf.Exp(-rotationSharpness * Time.deltaTime));
             }
 
@@ -144,16 +171,30 @@ namespace IronSand.Player
             controller.Move(Vector3.up * (verticalVelocity * Time.deltaTime));
         }
 
-        private void PerformAttack(float damage, int favor, float stunMultiplier)
+        private void PerformAttack(AttackKind kind)
         {
-            attackCooldownRemaining = attackCooldown;
-            Vector3 center = transform.position + Vector3.up + transform.forward * attackReach;
+            WeaponStats stats = weaponController != null
+                ? weaponController.CurrentStats
+                : WeaponCatalog.Get(WeaponArchetype.Unarmed);
+            WeaponArchetype weapon = weaponController != null ? weaponController.CurrentWeapon : WeaponArchetype.Unarmed;
+
+            float damage = kind == AttackKind.Heavy
+                ? heavyDamage * stats.HeavyDamageMultiplier
+                : lightDamage * stats.LightDamageMultiplier;
+            float reach = attackReach * stats.ReachMultiplier;
+            float stunMultiplier = (kind == AttackKind.Heavy ? 1.5f : 1f) * stats.StunMultiplier;
+            float cooldownMultiplier = stats.CooldownMultiplier * (kind == AttackKind.Heavy ? 1.25f : 1f);
+            attackCooldownRemaining = attackCooldown * cooldownMultiplier;
+
+            Vector3 center = transform.position + Vector3.up + transform.forward * reach;
             Collider[] hits = Physics.OverlapSphere(center, attackRadius, ~0, QueryTriggerInteraction.Ignore);
+            HashSet<EnemyGladiator> struckEnemies = new();
+            bool hitAny = false;
 
             foreach (Collider hit in hits)
             {
                 EnemyGladiator enemy = hit.GetComponentInParent<EnemyGladiator>();
-                if (enemy == null || enemy.IsDead)
+                if (enemy == null || enemy.IsDead || !struckEnemies.Add(enemy))
                 {
                     continue;
                 }
@@ -167,8 +208,14 @@ namespace IronSand.Player
 
                 if (enemy.ApplyDamage(damage, toEnemy.normalized * 2.5f, stunMultiplier))
                 {
-                    arenaDirector?.RegisterStylishHit(favor);
+                    hitAny = true;
+                    arenaDirector?.RegisterPlayerHit(kind, weapon, enemy.IsDead, stats.FavorBonus);
                 }
+            }
+
+            if (hitAny)
+            {
+                weaponController?.ConsumeDurability(kind == AttackKind.Heavy ? 2 : 1);
             }
         }
 
@@ -189,6 +236,83 @@ namespace IronSand.Player
             controller.Move(direction * dodgeDistance);
         }
 
+        private void ToggleLockOn()
+        {
+            if (lockTarget != null)
+            {
+                lockTarget = null;
+                return;
+            }
+
+            if (arenaDirector == null)
+            {
+                arenaDirector = FindFirstObjectByType<ArenaDirector>();
+            }
+
+            if (arenaDirector == null)
+            {
+                return;
+            }
+
+            Vector3 cameraForward = gameplayCamera != null ? gameplayCamera.transform.forward : transform.forward;
+            cameraForward.y = 0f;
+            cameraForward.Normalize();
+
+            EnemyGladiator best = null;
+            float bestScore = float.PositiveInfinity;
+            foreach (EnemyGladiator enemy in arenaDirector.AliveEnemies)
+            {
+                if (enemy == null || enemy.IsDead)
+                {
+                    continue;
+                }
+
+                Vector3 delta = enemy.transform.position - transform.position;
+                delta.y = 0f;
+                float distance = delta.magnitude;
+                if (distance <= 0.01f || distance > lockOnRange)
+                {
+                    continue;
+                }
+
+                float alignment = Vector3.Dot(cameraForward, delta / distance);
+                float score = distance + (1f - alignment) * 3f;
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    best = enemy;
+                }
+            }
+
+            lockTarget = best;
+        }
+
+        private void ValidateLockTarget()
+        {
+            if (lockTarget == null)
+            {
+                return;
+            }
+
+            Vector3 delta = lockTarget.transform.position - transform.position;
+            delta.y = 0f;
+            if (lockTarget.IsDead || delta.sqrMagnitude > lockOnRange * lockOnRange * 1.8f)
+            {
+                lockTarget = null;
+            }
+        }
+
+        private void TryPickupWeapon()
+        {
+            if (weaponController == null)
+            {
+                return;
+            }
+
+            Vector3 dropPosition = transform.position - transform.forward * 1.15f + Vector3.up * 0.35f;
+            weaponController.TryPickupNearest(transform.position, pickupRadius, dropPosition);
+        }
+
         protected override void OnDamaged(Vector3 knockback)
         {
             if (controller != null && knockback.sqrMagnitude > 0f)
@@ -200,6 +324,7 @@ namespace IronSand.Player
         protected override void OnDeath()
         {
             guarding = false;
+            lockTarget = null;
         }
     }
 }

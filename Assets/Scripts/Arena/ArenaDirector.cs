@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using IronSand.Combat;
 using IronSand.Enemy;
 using IronSand.Player;
+using IronSand.Scoring;
 using UnityEngine;
 
 namespace IronSand.Arena
@@ -10,6 +11,7 @@ namespace IronSand.Arena
     {
         [SerializeField] private PlayerGladiator player;
         [SerializeField] private CrowdFavorSystem crowdFavor;
+        [SerializeField] private CombatStyleSystem styleSystem;
         [SerializeField, Min(1)] private int maxConcurrentAttackers = 2;
         [SerializeField] private int[] enemiesPerWave = { 3, 4, 5 };
         [SerializeField, Min(2f)] private float spawnRadius = 10f;
@@ -25,15 +27,9 @@ namespace IronSand.Arena
 
         private void Start()
         {
-            if (player == null)
-            {
-                player = FindFirstObjectByType<PlayerGladiator>();
-            }
-
-            if (crowdFavor == null)
-            {
-                crowdFavor = FindFirstObjectByType<CrowdFavorSystem>();
-            }
+            player ??= FindFirstObjectByType<PlayerGladiator>();
+            crowdFavor ??= FindFirstObjectByType<CrowdFavorSystem>();
+            styleSystem ??= FindFirstObjectByType<CombatStyleSystem>();
 
             if (player != null && crowdFavor != null)
             {
@@ -70,8 +66,15 @@ namespace IronSand.Arena
             }
         }
 
-        public void RegisterStylishHit(int favor)
+        public void RegisterPlayerHit(AttackKind attack, WeaponArchetype weapon, bool kill, int extraFavor)
         {
+            int favor = 1 + Mathf.Max(0, extraFavor);
+            if (styleSystem != null)
+            {
+                StyleAward award = styleSystem.RegisterHit(attack, weapon, kill);
+                favor = award.Favor + Mathf.Max(0, extraFavor);
+            }
+
             crowdFavor?.AddFavor(favor);
         }
 
@@ -111,8 +114,9 @@ namespace IronSand.Arena
             controller.radius = 0.45f;
             controller.center = Vector3.zero;
 
+            WeaponArchetype weapon = WeaponCatalog.GetArenaWeapon(currentWaveIndex * 17 + index);
             EnemyGladiator enemy = root.AddComponent<EnemyGladiator>();
-            enemy.Initialize(player, this);
+            enemy.Initialize(player, this, weapon);
             enemy.Died += OnEnemyDied;
             aliveEnemies.Add(enemy);
         }
@@ -127,7 +131,6 @@ namespace IronSand.Arena
             enemy.Died -= OnEnemyDied;
             ReleaseAttackToken(enemy);
             aliveEnemies.Remove(enemy);
-            RegisterStylishHit(8);
 
             if (aliveEnemies.Count == 0 && !Victory)
             {

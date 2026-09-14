@@ -24,6 +24,8 @@ namespace IronSand.Enemy
         private bool attackCommitted;
         private float orbitDirection = 1f;
 
+        public WeaponArchetype HeldWeapon { get; private set; } = WeaponArchetype.Sword;
+
         protected override void Awake()
         {
             base.Awake();
@@ -31,10 +33,16 @@ namespace IronSand.Enemy
             orbitDirection = Random.value > 0.5f ? 1f : -1f;
         }
 
-        public void Initialize(PlayerGladiator target, ArenaDirector arenaDirector)
+        public void Initialize(PlayerGladiator target, ArenaDirector arenaDirector, WeaponArchetype weapon)
         {
             player = target;
             director = arenaDirector;
+            HeldWeapon = weapon == WeaponArchetype.Unarmed ? WeaponArchetype.Sword : weapon;
+
+            WeaponStats stats = WeaponCatalog.Get(HeldWeapon);
+            attackDamage *= stats.LightDamageMultiplier;
+            preferredRange *= Mathf.Clamp(stats.ReachMultiplier, 0.85f, 1.35f);
+            attackCooldown *= stats.CooldownMultiplier;
         }
 
         protected override void Update()
@@ -123,7 +131,8 @@ namespace IronSand.Enemy
 
             if (distance <= preferredRange + 0.65f && toPlayer.sqrMagnitude > 0.001f)
             {
-                player.ApplyDamage(attackDamage, toPlayer.normalized * 1.8f, 1f);
+                WeaponStats stats = WeaponCatalog.Get(HeldWeapon);
+                player.ApplyDamage(attackDamage, toPlayer.normalized * 1.8f, stats.StunMultiplier);
             }
 
             ReleaseToken();
@@ -153,10 +162,16 @@ namespace IronSand.Enemy
         protected override void OnDeath()
         {
             ReleaseToken();
+
+            WeaponStats stats = WeaponCatalog.Get(HeldWeapon);
+            int droppedDurability = Mathf.Max(1, stats.MaxDurability / 2);
+            WeaponPickup.Spawn(transform.position + Vector3.up * 0.35f, HeldWeapon, droppedDurability);
+
             if (controller != null)
             {
                 controller.enabled = false;
             }
+
             Destroy(gameObject, 0.8f);
         }
 

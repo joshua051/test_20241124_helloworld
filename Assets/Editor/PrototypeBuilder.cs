@@ -1,5 +1,7 @@
 using IronSand.Arena;
+using IronSand.Combat;
 using IronSand.Player;
+using IronSand.Scoring;
 using IronSand.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -34,11 +36,13 @@ namespace IronSand.Editor
 
             CreateLighting();
             CreateArenaGeometry();
+            CreateStarterWeapons();
             PlayerGladiator player = CreatePlayer();
             CreateCamera(player.transform);
 
             GameObject systems = new("ArenaSystems");
             systems.AddComponent<CrowdFavorSystem>();
+            systems.AddComponent<CombatStyleSystem>();
             systems.AddComponent<ArenaDirector>();
             systems.AddComponent<PrototypeHUD>();
 
@@ -84,6 +88,13 @@ namespace IronSand.Editor
                 pillar.transform.position = new Vector3(Mathf.Cos(angle) * 12.2f, 1.3f, Mathf.Sin(angle) * 12.2f);
                 pillar.transform.localScale = new Vector3(0.55f, 1.8f, 0.55f);
             }
+        }
+
+        private static void CreateStarterWeapons()
+        {
+            WeaponPickup.Spawn(new Vector3(-4f, 0.35f, 0f), WeaponArchetype.Axe);
+            WeaponPickup.Spawn(new Vector3(4f, 0.35f, 0f), WeaponArchetype.Spear);
+            WeaponPickup.Spawn(new Vector3(0f, 0.35f, 4f), WeaponArchetype.Mace);
         }
 
         private static PlayerGladiator CreatePlayer()
