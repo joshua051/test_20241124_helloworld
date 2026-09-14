@@ -1,6 +1,6 @@
 # Validation Gate — Combat Vertical Slice 2.0
 
-Test exact commit and record it. Do not report PASS from source review alone.
+Test the exact Git commit and record it. Do not report PASS from source review alone.
 
 ## Import / compile
 - [ ] Unity `6000.3.23f1`
@@ -10,56 +10,54 @@ Test exact commit and record it. Do not report PASS from source review alone.
 - [ ] generated scene, `.meta`, `Packages/packages-lock.json` and relevant `ProjectSettings` captured
 
 ## Automated
-- [ ] all EditMode tests pass
-- [ ] `CombatCoreTests` pass
-- [ ] `StateIntegrityTests` pass
-- [ ] all pre-existing regression tests pass
+- [ ] Repository Guard passes
+- [ ] pure `CombatRulesHarness` passes
+- [ ] all EditMode tests pass, including `CombatCoreTests` and `StateIntegrityTests`
 - [ ] all PlayMode `ArenaSmokeTests` pass
 
-## Attack pipeline
-- [ ] LMB has visible startup, active swing and recovery
+## Attack pipeline / combo
+- [ ] LMB has readable Startup / Active / Recovery
 - [ ] RMB is slower/heavier than LMB
-- [ ] player cannot spam through recovery
-- [ ] active swing hits each target at most once per attack
+- [ ] input during late Active / Recovery buffers the next attack
+- [ ] three buffered attacks progress through chain stages and finisher tuning
+- [ ] player cannot bypass Recovery by button spam
+- [ ] active sweep hits each target at most once per attack
 - [ ] attacks do not damage through solid scenery
 - [ ] Sword/Axe/Spear/Mace differ in timing, reach and Poise effect
 
 ## Defense / reactions
 - [ ] Q blocks only front-arc attacks
 - [ ] rear attack bypasses guard
-- [ ] newly pressed Q can Perfect Guard
-- [ ] held Q outside perfect window gives ordinary block
+- [ ] fresh Q can Perfect Guard; held late Q gives ordinary block
 - [ ] Perfect Guard counter-staggers and disarms armed enemy
 - [ ] light/heavy hits produce readable reactions
 - [ ] Poise break produces stronger stagger
-- [ ] hit stop/camera/audio/VFX are synchronized enough to read the hit
+- [ ] hit stop freezes combat pose while impact VFX/camera/audio remain readable
 
 ## Execution
-- [ ] weaken enemy below execution threshold and break Poise
-- [ ] HUD displays `EXECUTE [F]`
-- [ ] F starts only inside range/line-of-sight
-- [ ] execution strike occurs once
-- [ ] target dies once and state cleans safely
-- [ ] player regains control
+- [ ] weaken enemy below threshold and break Poise
+- [ ] HUD shows `EXECUTE [F]`
+- [ ] F requires range and line-of-sight
+- [ ] strike fires exactly once
+- [ ] target dies once
+- [ ] post-strike execution pose completes before control returns
 
 ## Weapons
-- [ ] starts with Gladius
-- [ ] Axe/Spear/Mace starter pickups exist
-- [ ] E swaps nearest visible pickup; cannot pick through wall
-- [ ] previous usable weapon drops
-- [ ] durability consumes only after landed melee attack, once per attack
+- [ ] Gladius start; Axe/Spear/Mace starter pickups
+- [ ] E cannot pick through walls and previous usable weapon drops
+- [ ] durability consumes only after landed melee attack and at most once per attack instance
 - [ ] break -> Unarmed
 - [ ] G throws current weapon and leaves player Unarmed
-- [ ] thrown collision can damage enemy
-- [ ] surviving thrown durability can return as pickup
-- [ ] defeated armed enemy drops weapon
+- [ ] thrown weapon ignores its owner, can damage enemy, and surviving durability can return as pickup
+- [ ] defeated armed enemies drop weapons
 
 ## Crowd / style
-- [ ] varied actions score effectively
-- [ ] Throw, Perfect Guard and Execution add style
-- [ ] Crowd threshold launches a visible physical gift
-- [ ] gift traverses arena physics and heals only when reached
-- [ ] no direct invisible threshold Heal remains
+- [ ] Throw, Perfect Guard and Execution produce style awards
+- [ ] threshold crossing queues a reward but does not heal or auto-launch it
+- [ ] HUD shows pending reward
+- [ ] C Appeal launches physical reward
+- [ ] first reward is food and heals only when reached
+- [ ] alternating reward includes a physical weapon gift resolving into a normal pickup
 
 ## AI / encounter
 - [ ] Aggressor presses more often
@@ -67,6 +65,7 @@ Test exact commit and record it. Do not report PASS from source review alone.
 - [ ] Brute is slower/heavier
 - [ ] Skirmisher prefers more space
 - [ ] enemy outside acquisition range always closes distance
+- [ ] blocked direct pressure produces basic tangential obstacle steering
 - [ ] no more than two attackers hold tokens
 - [ ] stunned/execution-ready/dead enemies release tokens
 - [ ] all three waves reach Victory
@@ -80,14 +79,14 @@ Test exact commit and record it. Do not report PASS from source review alone.
 - [ ] 20-minute standalone soak logged
 
 ## Evidence package
-1. exact Git commit SHA
-2. Unity version/Editor log
+1. exact commit SHA
+2. Unity version / Editor log
 3. zero-error Console evidence
-4. EditMode + PlayMode Test Runner summaries/XML
-5. 60–120 second capture: attack phases, Perfect Guard/disarm, throw, Poise break, execution and Crowd gift
+4. GitHub Actions + EditMode + PlayMode test summaries/XML
+5. 60–120 second capture: combo chain, Perfect Guard/disarm, throw, Poise break, execution, Crowd Appeal/food/weapon gift
 6. genuine generated Unity metadata/lock/scene/settings files
 7. defects with reproduction steps
 
 ## Gate status
 
-**NOT_RUN** — Combat V2 source is authored/static-reviewed only until real Unity evidence is returned.
+**NOT_RUN** — Unity-specific Combat V2 validation remains pending until real engine evidence is returned.

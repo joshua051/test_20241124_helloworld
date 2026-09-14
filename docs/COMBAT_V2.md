@@ -2,66 +2,50 @@
 
 ## Purpose
 
-Move Iron Sand Arena from a systems-only arena graybox into a combat-feel vertical slice. The goal is not to copy Shadow of Rome assets or proprietary implementation. The target is an original arena-action combat loop with comparable pillars: weight, weapon improvisation, enemy pressure, spectacle and audience feedback.
+Iron Sand Arena uses an original implementation to target the systemic strengths of classic gladiator arena action: weighted melee, weapon improvisation, coordinated enemy pressure, spectacle and audience interaction. It does not copy commercial-game assets or proprietary code.
 
 ## Attack pipeline
 
 ```text
 input
- -> AttackLibrary selects weapon/action profile
+ -> AttackInputBuffer during late Active / Recovery
+ -> AttackLibrary selects weapon + chain-step profile
  -> AttackTimeline: Startup
- -> procedural combat pose + forward displacement
+ -> procedural pose + forward displacement
  -> Active
  -> WeaponSweep overlap volume
  -> CombatImpact
  -> health + Poise
- -> hit reaction / stagger / execution-ready
- -> hit stop + camera impulse + VFX + generated impact SFX
+ -> reaction / stagger / execution-ready
+ -> hit stop + camera impulse + VFX + generated SFX
  -> Recovery
- -> return to locomotion/guard/dodge
+ -> buffered next attack or return to locomotion
 ```
 
-Each attack has explicit Startup, Active and Recovery time plus damage multiplier, Poise damage, sweep radius, root displacement, hit-stop time and camera impulse. A target can be hit at most once by one melee attack instance.
+A target can be hit at most once per melee attack instance. A buffered chain advances through three tuning stages; the third stage is a stronger finisher profile. Weapon data is snapshotted when an attack starts, so a break or other state mutation cannot change an in-flight swing.
 
 ## Defense
 
-Guard is directional. An impact outside the guard arc bypasses blocking. A fresh guard press within the configured Perfect Guard window negates the incoming impact, creates feedback, counters enemy Poise and disarms an armed attacker in this graybox tuning.
+Guard is directional. Rear attacks bypass it. A fresh guard press inside the Perfect Guard window negates the incoming impact, counter-staggers the attacker and disarms an armed enemy in current graybox tuning.
 
 ## Poise and execution
 
-Damage and Poise are separate resources. Poise breaking creates a heavier reaction. If Poise breaks while health is below the execution threshold, the enemy enters a temporary execution-ready state. A locked player within range can press `F` to start a timed execution sequence with a single strike event.
+Poise is independent from health. A Poise break produces a stronger reaction. Breaking Poise while the enemy is below the execution-health threshold creates a temporary execution window. `F` starts a timed execution against a visible locked target in range; its strike event fires once and the post-strike sequence completes before control returns.
 
 ## Weapons
 
-Sword, axe, spear and mace retain data-driven stats but also receive different attack timing/weight profiles. Weapons lose durability only after a melee attack lands. Broken weapons become Unarmed. `G` throws the current weapon as a physical Rigidbody projectile; surviving durability can return to the floor as a pickup.
+Sword, axe, spear and mace have distinct timing, reach and Poise profiles. Landed melee attacks consume durability at most once per attack instance. Broken weapons transition to Unarmed. `G` throws the current weapon as a Rigidbody projectile; surviving durability becomes a floor pickup. Pickups are claim-once and cannot be selected through solid scenery.
 
 ## Crowd
 
-Crowd Favor still derives from style awards, but threshold rewards no longer call Heal directly. `CrowdRewardDirector` launches a physical food gift from above the arena edge. The player must reach the gift to receive healing. The generated outer crowd ring makes the source visible in graybox form.
+Style awards feed Crowd Favor. Crossing a reward threshold queues a Crowd reward rather than healing automatically. The HUD shows pending rewards. Press `C` to Appeal; spectator-side logic then physically throws the next reward into the arena. Rewards alternate between recovery food and arena weapons. Food heals only when the player reaches it; weapon gifts resolve into normal pickup objects.
 
 ## AI
 
-`ArenaDirector` still bounds simultaneous committed attackers. Enemies now have four roles:
-- Aggressor: closes and attacks more often.
-- Flanker: higher orbit pressure.
-- Brute: slower movement, heavier attacks.
-- Skirmisher: prefers slightly longer spacing.
-
-All roles share the same attack timeline and CombatImpact rules as the player. The previous approach/attack dead zone is removed: outside attack acquisition range, enemies always close distance.
+`ArenaDirector` caps concurrent committed attackers. Enemies cycle Aggressor, Flanker, Brute and Skirmisher roles. They share attack timing/impact rules with the player, release attack tokens when stunned/vulnerable/dead, always close outside acquisition range and use basic tangential steering when scenery blocks direct pressure.
 
 ## Presentation
 
-`ProceduralCombatRig` builds an original primitive humanoid with limbs, buckler and weapon socket. It provides placeholder locomotion, guard, attack, hit-reaction, vulnerable and execution poses driven by the real combat state. `CombatFeedbackSystem` generates simple impact audio at runtime, transient hit flashes, hit stop and camera impulses.
+`ProceduralCombatRig` builds an original primitive humanoid and exposes locomotion, guard, attack, hit, vulnerable and execution poses from real combat state. Combat hit stop freezes pose clocks while camera impulse and transient impact feedback remain readable. Runtime-generated impact clips provide placeholder audio without bundled external assets.
 
-This is intentionally replaceable presentation. Production character assets and authored animation clips should connect to the same combat state contracts rather than rewrite combat rules.
-
-## Explicit non-goals for this milestone
-
-- copied character models, animation clips, sounds, textures or levels from any commercial game
-- final gore/dismemberment art
-- final motion-capture quality
-- production camera tuning for every arena layout
-- network multiplayer
-- career/save economy
-
-Those are separate production milestones. The V2 gate is combat-system completeness and evidence-backed playability.
+The procedural presentation is intentionally replaceable. Production skeletal meshes, authored animation clips and final sound should consume the same combat state contracts rather than rewrite the combat model.

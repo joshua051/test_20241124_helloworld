@@ -20,6 +20,7 @@ namespace IronSand.Player
         [SerializeField, Range(0f, 1f)] private float guardDamageMultiplier = 0.25f;
         [SerializeField, Min(0.05f)] private float perfectGuardWindow = 0.16f;
         [SerializeField, Range(30f, 180f)] private float guardArcDegrees = 118f;
+        [SerializeField, Min(0.05f)] private float comboInputBufferSeconds = 0.55f;
         [SerializeField, Min(0f)] private float dodgeDistance = 3.2f;
         [SerializeField, Min(0.05f)] private float dodgeDuration = 0.3f;
         [SerializeField, Min(0.1f)] private float dodgeCooldown = 0.8f;
@@ -33,10 +34,12 @@ namespace IronSand.Player
         private Camera gameplayCamera;
         private ArenaDirector arenaDirector;
         private ArenaSession session;
+        private CrowdRewardDirector crowdRewards;
         private ProceduralCombatRig rig;
         private GuardState guard;
         private readonly DodgeState dodge = new();
         private readonly AttackTimeline attack = new();
+        private readonly AttackInputBuffer attackBuffer = new();
         private readonly ExecutionState execution = new();
         private readonly HashSet<EnemyGladiator> struckThisAttack = new();
         private Vector3 dodgeDirection;
@@ -47,6 +50,7 @@ namespace IronSand.Player
         private AttackProfile currentAttackProfile;
         private WeaponArchetype currentAttackWeapon;
         private WeaponStats currentAttackStats;
+        private int attackChainStep;
         private bool durabilityConsumedThisAttack;
         private bool executionStrikeApplied;
 
@@ -54,6 +58,8 @@ namespace IronSand.Player
         public bool IsDodging => dodge.IsActive;
         public bool IsAttacking => attack.IsRunning;
         public bool IsExecuting => execution.IsActive;
+        public CombatPhase AttackPhase => attack.Phase;
+        public int AttackChainStep => attack.IsRunning ? attackChainStep + 1 : 0;
         public float DodgeCooldownRemaining => dodge.CooldownRemaining;
         public EnemyGladiator LockTarget => lockTarget;
         public PlayerWeaponController WeaponController => weaponController;
@@ -71,6 +77,7 @@ namespace IronSand.Player
             gameplayCamera = Camera.main;
             arenaDirector = FindFirstObjectByType<ArenaDirector>();
             session = FindFirstObjectByType<ArenaSession>();
+            crowdRewards = FindFirstObjectByType<CrowdRewardDirector>();
             rig = GetComponent<ProceduralCombatRig>() ?? gameObject.AddComponent<ProceduralCombatRig>();
             rig.ConfigureTeam(true);
             weaponController.SetVisualParent(rig.WeaponSocket);
@@ -102,11 +109,23 @@ namespace IronSand.Player
             }
 
             bool wasAttacking = attack.IsRunning;
+            CombatPhase phaseBeforeTick = attack.Phase;
+            float phaseProgressBeforeTick = attack.PhaseProgress;
+            if (wasAttacking && IsComboBufferWindow(phaseBeforeTick, phaseProgressBeforeTick) && TryReadAttackInput(out AttackKind bufferedInput))
+                attackBuffer.Queue(bufferedInput, Mathf.Max(0.05f, comboInputBufferSeconds));
+
             AttackProfile movementAttackProfile = currentAttackProfile;
             float rootMotionDelta = wasAttacking ? TickAttack() : 0f;
+            attackBuffer.Tick(Time.deltaTime);
+            bool chainedThisFrame = false;
+            if (wasAttacking && !attack.IsRunning && attackBuffer.TryConsume(out AttackKind queuedAttack))
+            {
+                chainedThisFrame = StartAttack(queuedAttack, true);
+            }
+
             bool wasDodging = dodge.IsActive;
             float dodgeSeconds = dodge.Tick(Time.deltaTime);
-            bool busy = IsStunned || wasAttacking || wasDodging;
+            bool busy = IsStunned || wasAttacking || wasDodging || chainedThisFrame;
 
             if (!busy)
             {
@@ -116,19 +135,16 @@ namespace IronSand.Player
             }
             else guard.End();
 
-            bool free = !IsStunned && !wasAttacking && !attack.IsRunning && !dodge.IsActive && !Guarding;
+            bool free = !IsStunned && !wasAttacking && !chainedThisFrame && !attack.IsRunning && !dodge.IsActive && !Guarding;
             if (free)
             {
-                if (Input.GetKeyDown(KeyCode.F) && TryStartExecution())
-                {
-                    UpdateExecution();
-                    return;
-                }
-                if (Input.GetKeyDown(KeyCode.G)) TryThrowWeapon();
-                else if (controller.isGrounded && Input.GetKeyDown(KeyCode.Space)) TryStartDodge(move, ref wasDodging);
-                else if (Input.GetKeyDown(KeyCode.E)) TryPickupWeapon();
-                else if (Input.GetMouseButtonDown(0)) StartAttack(AttackKind.Light);
-                else if (Input.GetMouseButtonDown(1)) StartAttack(AttackKind.Heavy);
+                if (Input.GetKeyDown(KeyCode.C)) { crowdRewards?.TryAppeal(); ResetAttackChain(); }
+                else if (Input.GetKeyDown(KeyCode.F) && TryStartExecution()) { UpdateExecution(); return; }
+                else if (Input.GetKeyDown(KeyCode.G)) { TryThrowWeapon(); ResetAttackChain(); }
+                else if (controller.isGrounded && Input.GetKeyDown(KeyCode.Space)) { TryStartDodge(move, ref wasDodging); ResetAttackChain(); }
+                else if (Input.GetKeyDown(KeyCode.E)) { TryPickupWeapon(); ResetAttackChain(); }
+                else if (Input.GetMouseButtonDown(0)) StartAttack(AttackKind.Light, false);
+                else if (Input.GetMouseButtonDown(1)) StartAttack(AttackKind.Heavy, false);
             }
 
             Move(move, dodgeSeconds, wasDodging, wasAttacking, rootMotionDelta, movementAttackProfile);
@@ -160,12 +176,13 @@ namespace IronSand.Player
             return base.ReceiveImpact(impact);
         }
 
-        private bool StartAttack(AttackKind kind)
+        private bool StartAttack(AttackKind kind, bool chained)
         {
+            attackChainStep = chained ? (attackChainStep + 1) % 3 : 0;
             currentAttackKind = kind;
             currentAttackWeapon = weaponController.CurrentWeapon;
             currentAttackStats = weaponController.CurrentStats;
-            currentAttackProfile = AttackLibrary.Get(currentAttackWeapon, kind);
+            currentAttackProfile = AttackLibrary.Get(currentAttackWeapon, kind, attackChainStep);
             if (!attack.TryStart(currentAttackProfile)) return false;
             struckThisAttack.Clear();
             durabilityConsumedThisAttack = false;
@@ -231,6 +248,7 @@ namespace IronSand.Player
             executionTarget = lockTarget;
             executionStrikeApplied = false;
             attack.Cancel();
+            attackBuffer.Clear();
             dodge.CancelActive();
             guard.End();
             rig?.ClearAttack();
@@ -244,7 +262,6 @@ namespace IronSand.Player
                 AbortExecution();
                 return;
             }
-
             Vector3 delta = executionTarget.transform.position - transform.position;
             delta.y = 0f;
             if (delta.sqrMagnitude > 0.01f)
@@ -253,12 +270,10 @@ namespace IronSand.Player
                 if (!executionStrikeApplied && delta.magnitude > 1.25f && controller.enabled)
                     controller.Move(delta.normalized * Mathf.Min(2.5f * Time.deltaTime, delta.magnitude - 1.25f));
             }
-
             ExecutionTick tick = execution.Tick(Time.deltaTime);
             rig?.SetExecution(true, tick.Progress);
             executionTarget.SetExecutionPose(tick.Progress);
             ApplyGravityOnly();
-
             if (tick.StrikeNow && !executionStrikeApplied && !executionTarget.IsDead)
             {
                 WeaponArchetype weapon = weaponController.CurrentWeapon;
@@ -276,9 +291,7 @@ namespace IronSand.Player
                     CombatFeedbackSystem.EmitExecution(executionTarget.transform.position + Vector3.up * 0.35f);
                 }
             }
-
-            if (tick.Completed)
-                CompleteExecution();
+            if (tick.Completed) CompleteExecution();
         }
 
         private void CompleteExecution()
@@ -287,6 +300,7 @@ namespace IronSand.Player
             executionTarget?.ClearExecutionPose();
             executionTarget = null;
             executionStrikeApplied = false;
+            ResetAttackChain();
         }
 
         private void AbortExecution()
@@ -312,6 +326,26 @@ namespace IronSand.Player
                 direction = lockTarget.transform.position + Vector3.up * 0.25f - (transform.position + Vector3.up * 0.35f);
             Vector3 origin = transform.position + Vector3.up * 0.38f + transform.forward * 0.72f;
             weaponController.TryThrow(origin, direction, this);
+        }
+
+        private static bool IsComboBufferWindow(CombatPhase phase, float progress)
+        {
+            return (phase == CombatPhase.Active && progress >= 0.75f) ||
+                   (phase == CombatPhase.Recovery && progress >= 0.25f);
+        }
+
+        private static bool TryReadAttackInput(out AttackKind kind)
+        {
+            if (Input.GetMouseButtonDown(0)) { kind = AttackKind.Light; return true; }
+            if (Input.GetMouseButtonDown(1)) { kind = AttackKind.Heavy; return true; }
+            kind = default;
+            return false;
+        }
+
+        private void ResetAttackChain()
+        {
+            attackBuffer.Clear();
+            attackChainStep = 0;
         }
 
         private Vector3 ReadMoveDirection()
@@ -383,8 +417,7 @@ namespace IronSand.Player
         {
             if (lockTarget == null) return;
             Vector3 delta = lockTarget.transform.position - transform.position;
-            if (lockTarget.IsDead || delta.sqrMagnitude > lockOnRange * lockOnRange * 1.8f)
-                lockTarget = null;
+            if (lockTarget.IsDead || delta.sqrMagnitude > lockOnRange * lockOnRange * 1.8f) lockTarget = null;
         }
 
         private void TryPickupWeapon()
@@ -399,20 +432,19 @@ namespace IronSand.Player
             if (lockTarget == null) return;
             Vector3 delta = lockTarget.transform.position - transform.position;
             delta.y = 0f;
-            if (delta.sqrMagnitude > 0.01f)
-                transform.rotation = Quaternion.LookRotation(delta.normalized);
+            if (delta.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(delta.normalized);
         }
 
         protected override void OnDamaged(Vector3 knockback)
         {
             guard?.End();
             attack.Cancel();
+            ResetAttackChain();
             dodge.CancelActive();
             if (execution.IsActive) AbortExecution();
             rig?.ClearAttack();
             rig?.TriggerHit(LastPoiseBroken);
-            if (controller != null && controller.enabled && knockback.sqrMagnitude > 0f)
-                controller.Move(knockback * 0.08f);
+            if (controller != null && controller.enabled && knockback.sqrMagnitude > 0f) controller.Move(knockback * 0.08f);
         }
 
         protected override void OnDeath()
@@ -420,6 +452,7 @@ namespace IronSand.Player
             guard?.End();
             lockTarget = null;
             attack.Cancel();
+            ResetAttackChain();
             dodge.CancelActive();
             if (execution.IsActive) AbortExecution();
             rig?.TriggerHit(true);

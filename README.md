@@ -1,38 +1,33 @@
 # Iron Sand Arena
 
-Original Unity 6 third-person gladiator-arena combat vertical slice. It is a spiritual design study of classic arena action games, built with original code, generated geometry and original graybox presentation. It contains no Capcom assets, characters, story, audio, levels or proprietary data.
+Original Unity 6 third-person gladiator-arena combat vertical slice. It is an original spiritual-design study of classic arena action games; it contains no Capcom assets, characters, story, audio, levels or proprietary code/data.
 
-## Current branch target: Combat Vertical Slice 2.0
+## Combat Vertical Slice 2.0
 
-The current Draft PR moves the prototype from immediate button-to-damage queries toward a real combat pipeline:
+The Draft branch now implements the gameplay path rather than an immediate button-to-damage prototype:
 
-- data-driven Startup / Active / Recovery attack timelines
-- procedural root-motion-equivalent attack displacement
-- swept melee volume during Active frames; one hit per target per attack
-- weapon-specific cadence, reach, poise damage, hit stop and movement
-- directional guard with a short Perfect Guard window
-- Perfect Guard counter-stagger and disarm
-- health + Poise + stagger + execution-ready state
-- contextual execution on vulnerable locked targets
-- timed dodge and invulnerability
-- weapon pickup / swap / durability / break / enemy drops
-- weapon throwing with physical projectile collision and recoverable durability
+- Startup / Active / Recovery attacks with late-swing/recovery input buffering and three-step chain tuning
+- active-frame swept melee volumes with one hit per target per attack
+- weapon-specific timing, reach, displacement, damage, Poise, hit stop and camera impulse
+- directional guard + short Perfect Guard window + counter-stagger/disarm
+- health + Poise + stronger stagger + temporary execution-ready state
+- timed contextual execution
+- dodge/invulnerability
+- pickup/swap/durability/break/drop plus physical weapon throwing
 - target lock and combat-facing movement
-- procedural graybox humanoid combat poses, locomotion, guard, hit reaction and execution posing
-- hit stop, camera impulse, transient impact VFX and runtime-generated impact audio
-- four enemy roles plus central attack-token concurrency
-- three encounter waves
-- Style / combo / variety / kill / Perfect Guard / throw / execution scoring
-- physical Crowd reward throws instead of direct threshold healing
-- visible crowd ring around the arena
-- pause / resume / restart lifecycle
+- procedural original graybox humanoid locomotion/guard/attack/hit/vulnerable/execution poses
+- generated impact audio, transient impact VFX, hit stop and camera impulse
+- Aggressor / Flanker / Brute / Skirmisher enemy roles with bounded attack tokens
+- Style / combo / variety / throw / Perfect Guard / execution scoring
+- Crowd Favor that queues rewards; the player must Appeal before spectators throw a physical food or weapon gift
+- visible generated spectator ring, three waves, pause/resume/restart lifecycle
 
-This remains a **graybox combat vertical slice**, not a production remake. The procedural rigs and generated audio are placeholders designed to validate timing, feedback and system interaction before production character art, authored motion-capture animation and final sound are commissioned.
+This remains a **graybox vertical slice**, not a claim of a perfect commercial-game reproduction. Production skeletal characters, authored mocap/keyframe animation clips, final audio/VFX and final gore/art are separate production-content work. Combat V2 is designed so those assets replace the procedural presentation without replacing combat rules.
 
 ## Engine
 
 - Unity `6000.3.23f1`
-- legacy Input Manager for this branch (`Input Manager (Old)` or `Both`)
+- Active Input Handling: `Input Manager (Old)` or `Both`
 - Unity Test Framework
 - no paid assets
 
@@ -42,53 +37,30 @@ This remains a **graybox combat vertical slice**, not a production remake. The p
 |---|---|
 | WASD / Shift | Move / sprint |
 | Mouse | Orbit camera |
-| LMB | Light attack |
-| RMB | Heavy attack |
-| Q | Directional guard; newly pressed guard can Perfect Guard |
+| LMB / RMB | Light / Heavy; press again during late Active/Recovery to buffer the next chain attack |
+| Q | Directional guard; fresh timing can Perfect Guard |
 | Space + direction | Dodge |
 | Tab | Lock / unlock target |
 | E | Pick up / swap nearest visible weapon |
 | G | Throw equipped weapon |
-| F | Execute a vulnerable locked target |
+| F | Execute vulnerable locked target |
+| C | Crowd Appeal when a reward is ready |
 | Esc | Pause / resume |
 | R | Restart while paused / defeated / victorious |
 
-## First run after pulling this revision
+## Required update procedure
 
-1. Preserve local edits before pulling the Draft branch `feat/arena-prototype-v0.1.0`.
-2. Open the repository with Unity `6000.3.23f1` and let packages/scripts import.
-3. Set **Active Input Handling** to `Input Manager (Old)` or `Both` if required, then restart the Editor.
+1. Preserve local edits and switch to `feat/arena-prototype-v0.1.0` while PR #1 remains Draft.
+2. Open with Unity `6000.3.23f1`; allow package resolution/compilation.
+3. Confirm Active Input Handling is Old or Both.
 4. Exit Play Mode.
-5. Run **Tools > Iron Sand Arena > Rebuild Prototype Arena**. This is mandatory because the generated scene receives new runtime systems and crowd geometry.
-6. Run all EditMode tests.
-7. Run the PlayMode `ArenaSmokeTests`.
-8. Execute `docs/VALIDATION.md` and return real Console/Test Runner/Play Mode/standalone evidence before merge.
-
-## Combat loop
-
-```text
-enter arena
- -> read enemy pressure and windups
- -> lock / reposition
- -> light or heavy attack through startup/active/recovery
- -> hit stop + reaction + poise damage
- -> guard / Perfect Guard -> stagger + disarm
- -> weapon breaks, swap or throw it
- -> vary actions to build style and Crowd Favor
- -> spectators physically throw recovery gifts
- -> poise-break weakened enemy -> execution window
- -> execute or continue pressure
- -> clear waves -> victory
-```
+5. Run **Tools > Iron Sand Arena > Rebuild Prototype Arena**. This is mandatory after Combat V2 because the generated scene receives new systems and spectator geometry.
+6. Run all EditMode tests, all PlayMode `ArenaSmokeTests`, then `docs/VALIDATION.md`.
 
 ## Validation policy
 
-Repository code is not proof that Unity executed it. PR #1 stays Draft until `docs/QUALITY_GATES.md` is evidenced. Any item not actually run in Unity is `NOT_RUN`, never implied PASS.
+The GitHub pure-rules harness can prove compilation/execution of the scene-independent C# combat rules. It cannot prove Unity API integration, rendering, physics, frame behavior or combat feel. PR #1 remains Draft until the Unity and standalone gates in `docs/QUALITY_GATES.md` are evidenced.
 
-See:
-- `docs/ARCHITECTURE.md`
-- `docs/COMBAT_V2.md`
-- `docs/QUALITY_GATES.md`
-- `docs/VALIDATION.md`
+See `docs/COMBAT_V2.md`, `docs/ARCHITECTURE.md`, `docs/QUALITY_GATES.md`, and `docs/VALIDATION.md`.
 
 Prototype codename: **Iron Sand Arena**

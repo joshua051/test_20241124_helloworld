@@ -9,6 +9,7 @@ internal static class Program
     private static void Main()
     {
         AttackTimelineChecks();
+        AttackBufferChecks();
         GuardChecks();
         PoiseChecks();
         ExecutionChecks();
@@ -38,9 +39,24 @@ internal static class Program
         AttackProfile sword = AttackLibrary.Get(WeaponArchetype.Sword, AttackKind.Heavy);
         AttackProfile mace = AttackLibrary.Get(WeaponArchetype.Mace, AttackKind.Heavy);
         AttackProfile spear = AttackLibrary.Get(WeaponArchetype.Spear, AttackKind.Light);
+        AttackProfile finisher = AttackLibrary.Get(WeaponArchetype.Sword, AttackKind.Light, 2);
         True(mace.Total > sword.Total, "mace is slower than sword");
         True(mace.PoiseDamage > sword.PoiseDamage, "mace has more poise damage");
         True(spear.RootMotionDistance > AttackLibrary.Get(WeaponArchetype.Sword, AttackKind.Light).RootMotionDistance, "spear commits farther");
+        True(finisher.DamageMultiplier > AttackLibrary.Get(WeaponArchetype.Sword, AttackKind.Light, 0).DamageMultiplier, "chain finisher is stronger");
+    }
+
+    private static void AttackBufferChecks()
+    {
+        AttackInputBuffer buffer = new();
+        buffer.Queue(AttackKind.Heavy, 0.25f);
+        buffer.Tick(0.10f);
+        True(buffer.TryConsume(out AttackKind kind), "buffer consumes inside lifetime");
+        Equal(AttackKind.Heavy, kind, "buffer preserves action");
+        True(!buffer.TryConsume(out _), "buffer consumes once");
+        buffer.Queue(AttackKind.Light, 0.1f);
+        buffer.Tick(0.11f);
+        True(!buffer.TryConsume(out _), "expired buffer is rejected");
     }
 
     private static void GuardChecks()

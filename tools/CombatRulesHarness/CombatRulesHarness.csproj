@@ -7,6 +7,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../Assets/Scripts/Combat/AttackInputBuffer.cs" Link="Source/AttackInputBuffer.cs" />
     <Compile Include="../../Assets/Scripts/Combat/AttackKind.cs" Link="Source/AttackKind.cs" />
     <Compile Include="../../Assets/Scripts/Combat/AttackProfile.cs" Link="Source/AttackProfile.cs" />
     <Compile Include="../../Assets/Scripts/Combat/AttackTimeline.cs" Link="Source/AttackTimeline.cs" />
