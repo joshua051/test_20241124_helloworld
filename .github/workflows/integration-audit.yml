@@ -1,0 +1,33 @@
+name: Integration Audit
+
+on:
+  push:
+    branches: [feat/arena-prototype-v0.1.0]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  source-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout pinned source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Preserve committed source only
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/integration-evidence"
+          git rev-parse HEAD > "$RUNNER_TEMP/integration-evidence/source-commit.txt"
+          git archive --format=zip --output="$RUNNER_TEMP/integration-evidence/source.zip" HEAD
+          printf '%s\n' 'Source snapshot only. No Unity execution or gate approval.' > "$RUNNER_TEMP/integration-evidence/BOUNDARY.txt"
+      - name: Upload reproducible source evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: integration-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/integration-evidence/
+          if-no-files-found: error
+          retention-days: 7
