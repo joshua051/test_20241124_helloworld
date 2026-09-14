@@ -11,10 +11,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: gladiator-art-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   inspect:
     runs-on: ubuntu-24.04
-    timeout-minutes: 6
+    timeout-minutes: 15
     steps:
       - name: Checkout reviewed source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -22,7 +26,15 @@ jobs:
           persist-credentials: false
       - name: Download CC0 candidates and inspect archive contents
         run: python3 tools/art/inspect_sources.py
-      - name: Preserve actual downloaded assets and inventory
+      - name: Install Blender renderer from Ubuntu repositories
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends blender
+          blender --version
+      - name: Render the actual candidate mesh with scripts disabled
+        run: blender --background --factory-startup --disable-autoexec --threads 2 --python-exit-code 1 --python tools/art/preview_sources.py
+      - name: Preserve actual sources and inspection renders
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: gladiator-source-inspection
