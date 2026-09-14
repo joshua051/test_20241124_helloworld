@@ -44,20 +44,26 @@ Rules:
 - Added enemy gravity, windup telegraphing, delayed wave transitions and regression coverage.
 - Kept Unity execution status NOT_RUN pending real local evidence.
 
-## Current status
+## Integration preflight 01 — 2026-09-14
 
-- Active branch: `feat/arena-prototype-v0.1.0`
-- Draft PR: #1 — Combat Vertical Slice 2.0
-- Validation tracker: Issue #2 — U1–U7 local Unity validation
-- Current source head at time of this log update: `77c3bf9f61f3eb0171047c68703cafa69f61031f`
-- GitHub CI source/pure-rules/database pipeline: PASS
-- U1 Unity import: NOT_RUN
-- U2 Unity compile/scene rebuild: NOT_RUN
-- U3 EditMode/PlayMode: NOT_RUN
-- U4 mechanics validation: NOT_RUN
-- U5 AI/Crowd/encounter validation: NOT_RUN
-- U6 combat feel/camera/readability: NOT_RUN
-- U7 standalone/soak: NOT_RUN
+Reviewed feature parent: `22063f22bfac7fd52e492a313291717253e89b19` (preceded by `16f4a89`).
+
+- Added explicit startup readiness, single-session clock ownership and own-scene restart; suppressed resume-frame combat input.
+- Added a Unity-generated Resources material reference and build preflight to avoid runtime name-only shader lookup.
+- Hardened partial material/sword cleanup, reset cached model data on subsystem initialization, and declared JsonUtility's module explicitly.
+- Replaced destructive in-place batch validation with a committed isolated snapshot, fresh evidence directories, process timeouts, strict XML validation and actual build receipts.
+- Added three authored PlayMode integration cases, bounded existing waits and actual imported-model assertions. Unity execution: NOT_RUN.
+- Ran 23 Python coordinator tests locally with synthetic fixtures: PASS. This is NOT Unity validation.
+- Added 18 assertions on the actual pure SessionFlow class to the existing C# harness. Await exact-commit CI; not a Unity API compile.
+- Existing offline gladiator-data validator executed locally: PASS; no mesh/render files changed or new visual approval claimed.
+- A real attempt to invoke the new coordinator in the assistant container returned exit 2 / BLOCKED because no Unity executable is installed. No engine process/tests/build ran.
+- Canonicalized U1-U7 labels. Old engineering percentages remain explicitly historical and cannot be averaged into release completion.
+
+### Current acceptance status
+
+PR #1 remains Draft; main is unchanged. Source checks are exact-commit Actions evidence, not a hard-coded current PASS. U1-U7 remain NOT_RUN. The next required external capability is an authorized machine with installed/licensed Unity; GitHub access alone does not operate the user's local editor.
+
+Details: `docs/INTEGRATION_PREFLIGHT_01.md`; execution: `docs/LOCAL_VALIDATION_WORKPACK.md`.
 
 ## Reporting policy
 

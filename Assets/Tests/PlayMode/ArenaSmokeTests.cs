@@ -17,21 +17,21 @@ namespace IronSand.Tests
         [UnitySetUp]
         public IEnumerator LoadGeneratedScene()
         {
-            Assert.IsTrue(Application.CanStreamedLevelBeLoaded(ScenePath),
-                "Run Tools > Iron Sand Arena > Rebuild Prototype Arena before PlayMode tests.");
-            Time.timeScale = 1f;
-            yield return SceneManager.LoadSceneAsync(ScenePath, LoadSceneMode.Single);
-            yield return null;
-            var session = Object.FindFirstObjectByType<ArenaSession>();
-            Assert.IsNotNull(session);
-            Assert.IsTrue(string.IsNullOrEmpty(session.SetupError), session.SetupError);
-            session.Resume();
+            yield return ArenaTestSupport.Load();
         }
 
         [UnityTest]
         public IEnumerator SceneLoadsWithCombatRigAndGroundedActors()
         {
-            for (int i = 0; i < 60; i++) yield return null;
+            yield return ArenaTestSupport.WaitFor(() =>
+            {
+                var actor = Object.FindFirstObjectByType<PlayerGladiator>();
+                var arena = Object.FindFirstObjectByType<ArenaDirector>();
+                if (actor == null || arena == null || !actor.GetComponent<CharacterController>().isGrounded) return false;
+                foreach (var enemy in arena.AliveEnemies)
+                    if (enemy == null || !enemy.GetComponent<CharacterController>().isGrounded) return false;
+                return true;
+            }, "Actors did not become grounded.");
             var player = Object.FindFirstObjectByType<PlayerGladiator>();
             var camera = Object.FindFirstObjectByType<ThirdPersonArenaCamera>();
             var director = Object.FindFirstObjectByType<ArenaDirector>();
@@ -56,9 +56,9 @@ namespace IronSand.Tests
         public IEnumerator EnemyPressureEventuallyCommitsAnAttackWithoutDeadZone()
         {
             var director = Object.FindFirstObjectByType<ArenaDirector>();
-            float deadline = Time.time + 8f;
+            float deadline = Time.realtimeSinceStartup + 8f;
             bool sawCommit = false;
-            while (Time.time < deadline)
+            while (Time.realtimeSinceStartup < deadline)
             {
                 foreach (var enemy in director.AliveEnemies)
                     sawCommit |= enemy != null && enemy.IsAttackCommitted;
@@ -105,8 +105,7 @@ namespace IronSand.Tests
             Assert.IsTrue(oldSession.Ended);
             Assert.IsTrue(oldSession.IsPaused);
             oldSession.Restart();
-            yield return null;
-            yield return null;
+            yield return ArenaTestSupport.WaitReady(oldSession);
             var player = Object.FindFirstObjectByType<PlayerGladiator>();
             var director = Object.FindFirstObjectByType<ArenaDirector>();
             var session = Object.FindFirstObjectByType<ArenaSession>();

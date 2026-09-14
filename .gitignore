@@ -29,3 +29,6 @@ ExportedObj/
 *.VC.db
 sysinfo.txt
 .DS_Store
+
+__pycache__/
+*.pyc

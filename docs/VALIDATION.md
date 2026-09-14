@@ -13,7 +13,9 @@ Test the exact Git commit and record it. Do not report PASS from source review a
 - [ ] Repository Guard passes
 - [ ] pure `CombatRulesHarness` passes
 - [ ] all EditMode tests pass, including `CombatCoreTests` and `StateIntegrityTests`
-- [ ] all PlayMode `ArenaSmokeTests` pass
+- [ ] all PlayMode suites pass, including `ArenaSmokeTests`, `ArenaStateIntegrityTests`, `ArenaIntegrationTests`
+- [ ] all `ImportedGladiatorTests` pass; runtime material is generated and referenced
+- [ ] resume does not dispatch a same-frame attack; restart reloads its own arena scene
 
 ## Attack pipeline / combo
 - [ ] LMB has readable Startup / Active / Recovery
@@ -88,5 +90,7 @@ Test the exact Git commit and record it. Do not report PASS from source review a
 7. defects with reproduction steps
 
 ## Gate status
+
+Numbering is authoritative in `docs/QUALITY_GATES.md`. `tools/run_unity_validation.py` runs an isolated committed snapshot and rejects incomplete test results; its own fixture tests are not engine tests.
 
 **NOT_RUN** — Unity-specific Combat V2 validation remains pending until real engine evidence is returned.

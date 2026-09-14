@@ -1,5 +1,6 @@
 using System;
 using IronSand.Combat;
+using IronSand.Arena;
 using IronSand.Scoring;
 using UnityEngine;
 
@@ -8,6 +9,7 @@ internal static class Program
     private static int checks;
     private static void Main()
     {
+        SessionFlowChecks();
         AttackTimelineChecks();
         AttackBufferChecks();
         GuardChecks();
@@ -17,6 +19,35 @@ internal static class Program
         WeaponChecks();
         StyleChecks();
         Console.WriteLine($"CombatRulesHarness PASS ({checks} checks)");
+    }
+
+    private static void SessionFlowChecks()
+    {
+        SessionFlow flow = new();
+        True(!flow.CanPlay, "session begins blocked");
+        True(!flow.Resume(false), "cannot resume before readiness");
+        True(!flow.BeginRestart(true), "cannot restart before readiness");
+        flow.MarkReady();
+        True(flow.Ready && flow.Paused, "readiness does not silently resume");
+        True(!flow.Resume(true), "ended session cannot resume");
+        True(flow.Resume(false), "ready session resumes");
+        True(flow.CanPlay, "ready resumed session can play");
+        True(!flow.BeginRestart(false), "restart rejected during live combat");
+        flow.Pause();
+        True(!flow.CanPlay, "pause blocks gameplay");
+        True(flow.BeginRestart(false), "paused restart accepted");
+        True(!flow.BeginRestart(false), "restart is single flight");
+        True(!flow.Resume(false), "loading cannot resume");
+        flow.Fail("load failure");
+        True(!flow.Ready && !flow.Restarting && flow.Paused, "failure leaves no half-loading state");
+        Equal("load failure", flow.Error, "failure explains blocker");
+        flow.MarkReady();
+        True(!flow.Ready, "readiness cannot erase failure");
+        True(!flow.Resume(false), "failure cannot resume");
+        flow = new SessionFlow(); flow.MarkReady(); flow.Resume(false);
+        True(flow.BeginRestart(true), "ended session may restart before pause update");
+        flow = new SessionFlow(); flow.Fail("");
+        True(!string.IsNullOrWhiteSpace(flow.Error), "empty failure message gets explanation");
     }
 
     private static void AttackTimelineChecks()

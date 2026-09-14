@@ -15,25 +15,27 @@ Required:
 
 Evidence: project opens in Unity `6000.3.23f1`, packages resolve, genuine `.meta`, `Packages/packages-lock.json`, generated scene and relevant `ProjectSettings` changes are captured.
 
-Status: **NOT_RUN for Combat V2**
+Status: **NOT_RUN** — real engine evidence required.
 
 ## U2 — Compile
 
 Evidence: zero C# compile errors, zero package/compiler exceptions, arena rebuild succeeds.
 
-Status: **NOT_RUN for Combat V2**
+Status: **NOT_RUN** — real engine evidence required.
 
 ## U3 — Automated rules and EditMode
 
-All existing and new tests must pass, including Crowd Favor, WeaponCatalog/state integrity, StyleScoreModel, DodgeState, AttackTimeline, GuardState, PoiseState, ExecutionState and arena geometry/camera regression tests.
+All existing and new EditMode tests must pass, including ImportedGladiatorTests and Crowd Favor, WeaponCatalog/state integrity, StyleScoreModel, DodgeState, AttackTimeline, GuardState, PoiseState, ExecutionState and arena geometry/camera regression tests.
 
-Status: **NOT_RUN for Combat V2**
+Status: **NOT_RUN** — real engine evidence required.
 
 ## U4 — PlayMode lifecycle
 
-Required: generated scene loads; player/enemies grounded; procedural combat rigs exist; enemy pressure reaches a committed attack without deadlock; attack-token count remains bounded; Crowd threshold spawns a physical gift; defeat/restart resets state; no recurring exceptions over 10 minutes.
+Run ArenaSmokeTests, ArenaStateIntegrityTests and ArenaIntegrationTests. All waits must have real-time deadlines; a paused simulation must not hang the runner.
 
-Status: **NOT_RUN for Combat V2**
+Required: generated scene loads; player/enemies grounded; procedural combat rigs exist; enemy pressure reaches a committed attack without deadlock; attack-token count remains bounded; Crowd threshold queues a reward and explicit Appeal launches the physical gift; defeat/restart resets state; no recurring exceptions over 10 minutes.
+
+Status: **NOT_RUN** — real engine evidence required.
 
 ## U5 — Combat mechanics
 
@@ -51,13 +53,13 @@ Required manual evidence:
 - `G` throws weapon, can damage and leaves player Unarmed
 - pickup/swap/durability/break/drop remains consistent
 
-Status: **NOT_RUN for Combat V2**
+Status: **NOT_RUN** — real engine evidence required.
 
 ## U6 — Arena / Crowd / AI feel
 
 Required: four enemy roles show distinct pressure patterns; attack concurrency stays fair; physical Crowd gifts are collectible; style rewards varied actions/throw/Perfect Guard/execution; three waves complete without soft-lock; camera remains readable.
 
-Status: **NOT_RUN for Combat V2**
+Status: **NOT_RUN** — real engine evidence required.
 
 ## U7 — Standalone build
 
@@ -68,3 +70,7 @@ Status: **NOT_RUN**
 ## Production fidelity gate
 
 Combat V2 becomes a completed **graybox vertical slice** only after U1–U7 evidence. Production humanoid art, authored animation clips, final audio/VFX and gore/dismemberment presentation remain a separate content-production gate.
+
+## Evidence scope
+
+The isolated validation coordinator produces automatic stage receipts only. A successful build does not mark U7 PASS without graphical launch/restart and soak evidence. Model fallback does not satisfy asset readiness. Source CI and coordinator-fixture tests never mark Unity gates PASS. See `docs/INTEGRATION_PREFLIGHT_01.md`.

@@ -60,7 +60,7 @@ namespace IronSand.UI
 
         private void DrawSessionPanel()
         {
-            string title = !string.IsNullOrEmpty(session.SetupError) ? "SETUP REQUIRED" :
+            string title = !string.IsNullOrEmpty(session.SetupError) ? "SETUP REQUIRED" : !session.IsReady ? "STARTING ARENA" :
                 director != null && director.Victory ? "VICTORY" : player != null && player.IsDead ? "DEFEAT" : "PAUSED";
             Rect area = new(Screen.width * 0.5f - 200f, Screen.height * 0.5f - 110f, 400f, 220f);
             GUI.Box(area, title);
@@ -70,9 +70,10 @@ namespace IronSand.UI
                     new GUIStyle(GUI.skin.label) { wordWrap = true });
                 return;
             }
+            if (!session.IsReady) return;
             if (!session.Ended && GUI.Button(new Rect(area.x + 80f, area.y + 50f, 240f, 36f), "Resume (Esc)")) session.Resume();
             if (GUI.Button(new Rect(area.x + 80f, area.y + 100f, 240f, 36f), "Restart arena (R)")) session.Restart();
-            GUI.Label(new Rect(area.x + 20f, area.y + 162f, 360f, 40f), "Procedural graybox animation; production character assets are not included.");
+            GUI.Label(new Rect(area.x + 20f, area.y + 162f, 360f, 40f), "Licensed low-poly skin; procedural animation. Engine acceptance remains separate.");
         }
 
         private void DrawEnemyMarkers()

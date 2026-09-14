@@ -24,7 +24,14 @@ jobs:
           git rev-parse HEAD > "$RUNNER_TEMP/integration-evidence/source-commit.txt"
           git archive --format=zip --output="$RUNNER_TEMP/integration-evidence/source.zip" HEAD
           printf '%s\n' 'Source snapshot only. No Unity execution or gate approval.' > "$RUNNER_TEMP/integration-evidence/BOUNDARY.txt"
+      - name: Test validation coordinator (not Unity)
+        shell: bash
+        run: python3 -m unittest discover -s tools/tests -v 2>&1 | tee "$RUNNER_TEMP/integration-evidence/coordinator-tests.log"
+      - name: Check committed gladiator data (not rendering)
+        shell: bash
+        run: python3 tools/validate_gladiator_asset.py | tee "$RUNNER_TEMP/integration-evidence/asset-data-check.json"
       - name: Upload reproducible source evidence
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: integration-source-${{ github.run_id }}

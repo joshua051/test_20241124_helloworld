@@ -53,6 +53,9 @@ namespace IronSand.Art
                 return false;
             }
         }
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetSourceCache() { source = null; }
+
         private static bool LoadSource()
         {
             if (source != null) return true;
@@ -133,12 +136,18 @@ namespace IronSand.Art
         {
             if (parent == null || !LoadSource()) return null;
             GameObject root = new GameObject("WeaponVisual_Sword"); root.transform.SetParent(parent, false); root.transform.localPosition = localPosition;
-            Mesh mesh = MakeMesh(source.sword, false); Material[] owned = CreateMaterials(true);
-            root.AddComponent<MeshFilter>().sharedMesh = mesh;
-            root.AddComponent<MeshRenderer>().sharedMaterials = SelectMaterials(source.sword, owned);
-            GladiatorMeshOwner lifetime = root.AddComponent<GladiatorMeshOwner>(); lifetime.Mesh = mesh; lifetime.Materials = owned;
-            return root;
+            GladiatorMeshOwner lifetime = root.AddComponent<GladiatorMeshOwner>();
+            try
+            {
+                lifetime.Mesh = MakeMesh(source.sword, false);
+                lifetime.Materials = CreateMaterials(true);
+                root.AddComponent<MeshFilter>().sharedMesh = lifetime.Mesh;
+                root.AddComponent<MeshRenderer>().sharedMaterials = SelectMaterials(source.sword, lifetime.Materials);
+                return root;
+            }
+            catch { root.SetActive(false); Dispose(root); throw; }
         }
+
         private static Mesh MakeMesh(MeshData data, bool skinned)
         {
             int count = data.vertices.Length / 3;
@@ -163,13 +172,13 @@ namespace IronSand.Art
         }
         private static Material[] CreateMaterials(bool playerTeam)
         {
-            Shader shader = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline != null
-                ? Shader.Find("Universal Render Pipeline/Lit") : Shader.Find("Standard");
-            if (shader == null) throw new InvalidOperationException("The active render pipeline requires a supported lit shader.");
+            Material template = GladiatorMaterialLibrary.RequireTemplate();
             Material[] result = new Material[source.materials.Length];
+            try
+            {
             for (int i = 0; i < result.Length; i++)
             {
-                MaterialData spec = source.materials[i]; Material mat = new Material(shader) { name = "CC0_" + spec.name }; result[i] = mat;
+                MaterialData spec = source.materials[i]; Material mat = new Material(template) { name = "CC0_" + spec.name }; result[i] = mat;
                 Color color = new Color(spec.color[0], spec.color[1], spec.color[2], spec.color[3]);
                 if (spec.teamTint && !playerTeam) color = new Color(.46f, .12f, .07f);
                 SetColor(mat, color);
@@ -182,6 +191,12 @@ namespace IronSand.Art
                     if (texture == null) throw new InvalidOperationException("Missing gladiator texture: " + spec.texture);
                     mat.mainTexture = texture; if (mat.HasProperty("_BaseMap")) mat.SetTexture("_BaseMap", texture);
                 }
+            }
+            }
+            catch
+            {
+                foreach (Material material in result) Dispose(material);
+                throw;
             }
             return result;
         }

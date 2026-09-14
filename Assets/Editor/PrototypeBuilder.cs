@@ -28,6 +28,7 @@ namespace IronSand.Editor
         public static void BuildForValidation() { if (!Application.isBatchMode) throw new InvalidOperationException("BuildForValidation is for Unity -batchmode only."); BuildScene(); }
         private static void BuildScene()
         {
+            GladiatorBuildPreflight.Prepare();
             if (!AssetDatabase.IsValidFolder("Assets/Scenes")) AssetDatabase.CreateFolder("Assets", "Scenes");
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); CreateLighting(); ArenaGeometry.Create();
             WeaponPickup.Spawn(new Vector3(-4f, 0.35f, 0f), WeaponArchetype.Axe); WeaponPickup.Spawn(new Vector3(4f, 0.35f, 0f), WeaponArchetype.Spear); WeaponPickup.Spawn(new Vector3(0f, 0.35f, 4f), WeaponArchetype.Mace);
