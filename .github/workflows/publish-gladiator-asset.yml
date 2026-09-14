@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 7
     steps:
-      - name: Checkout current feature branch without replacing local user work
+      - name: Checkout current feature branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: feat/arena-prototype-v0.1.0
@@ -35,10 +35,7 @@ jobs:
             --model-sha256 3c2d09fe17dc686f13180f8f33cd5150014f602b05326d90b2b52e5b8eb56ff3
       - name: Check actual committed mesh buffers and four key-pose deformations
         run: python3 tools/validate_gladiator_asset.py
-      - name: Preserve complete source checkout and publication evidence
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: iron-sand-gladiator-delivery
-          path: /tmp/iron-sand-art-delivery/
-          if-no-files-found: error
-          retention-days: 30
+      # The original render artifact remains available from its successful renderer run.
+      # All accepted assets are committed to Art/Gladiator and Assets/Resources/Gladiators.
+      # A bonus whole-repo archive upload failed finalization (403) after successful
+      # publication in run 34854744166; it is not part of this publication gate.
