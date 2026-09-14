@@ -1,126 +1,115 @@
 # Iron Sand Arena
 
-**Iron Sand Arena** is an original Unity 6 third-person gladiator-arena action prototype inspired by the design spirit of classic arena combat games: weighty melee exchanges, crowd favor, multi-enemy pressure, and escalating waves.
+**Iron Sand Arena** is an original Unity 6 third-person gladiator-arena action prototype built around weighty melee pressure, improvised weapon swapping, crowd favor, style scoring, and multi-enemy encounter direction.
 
-This project intentionally contains **no Capcom assets, characters, story, audio, level data, or proprietary code**. The prototype uses original systems and generated placeholder geometry so its combat loop can be tested before production art begins.
+It intentionally contains **no Capcom assets, characters, story, audio, level data, or proprietary code**. It is not a remake or reverse-engineered copy of *Shadow of Rome*; it is an original work using broadly applicable arena-action design ideas.
 
 ## Engine
 
 - Unity `6000.3.23f1`
-- No paid assets
 - Unity Test Framework for EditMode tests
-- Keyboard + mouse first; controller support is planned
+- No paid assets
+- Keyboard + mouse graybox controls
 
-## Implemented in v0.1.0 branch
+## Implemented in code on the current Draft PR
 
-- Third-person movement and orbit camera
-- Sprint
+Validation is still pending; "implemented" below means repository code exists, not that Unity execution has been proven.
+
+- Third-person movement, sprint, and orbit camera
 - Light / heavy prototype melee attacks
-- Guard with damage reduction
-- Dodge with a short invulnerability window
-- Hit-stun and knockback
-- Multi-enemy arena AI
-- Central attack-token arbitration so enemies do not all commit attacks simultaneously
+- Guard, hit-stun, knockback, and dodge invulnerability
+- Target lock-on with combat-facing strafing and lock camera framing
+- Multi-enemy steering with central attack-token arbitration
 - Three escalating arena waves
-- Crowd Favor meter
-- Crowd healing rewards at favor thresholds
-- Generated Roman-inspired graybox arena
-- Minimal debug HUD
-- EditMode tests for core Crowd Favor behavior
-- Explicit validation checklist with Gate status
+- Sword / Axe / Spear / Mace tuning plus Unarmed fallback
+- World weapon pickups, nearest pickup swap, durability, break-to-Unarmed, and enemy weapon drops
+- Combo / variety / kill Style Score with rank and timeout
+- Crowd Favor fed by style awards and healing rewards at thresholds
+- Generated Roman-inspired graybox arena with starter weapon pickups
+- Debug HUD for health, weapon, durability, style, combo, crowd, wave, enemy count, and lock target
+- EditMode tests for Crowd Favor, weapon tuning, and pure style scoring
+- Repository guard workflow and evidence-based quality gates
 
-## Not implemented yet
+## Explicitly not implemented yet
 
-- Target lock-on
-- Weapon pickups / swapping / durability / throwing
-- Score-combo variety system
 - Root-motion combat animation
-- Per-weapon hitboxes and animation-event attack windows
-- Perfect guard / disarm / executions
-- Production UI, VFX, audio, gamepad support, save progression
-
-These are planned gates, not claimed functionality.
+- Animation-event weapon hitboxes
+- Camera obstruction solver
+- Directional/perfect guard, shield mechanics, disarm
+- Weapon throwing and executions
+- NavMesh enemy locomotion / authored combat archetype behavior trees
+- Production UI/VFX/audio/art
+- Gamepad + Unity Input System migration
+- Accessibility, save progression, career/roguelite layer, bosses
 
 ## Controls
 
 | Input | Action |
 |---|---|
-| `WASD` | Move |
-| Mouse | Orbit camera |
+| `WASD` | Move / strafe |
+| Mouse | Orbit camera / vertical aim while locked |
 | `Left Shift` | Sprint |
 | `Left Mouse` | Light attack |
 | `Right Mouse` | Heavy attack |
 | `Space` | Dodge |
 | `Q` | Guard |
+| `Tab` | Lock / unlock target |
+| `E` | Pick up / swap nearest weapon |
 | `Esc` | Release cursor |
 
-## First launch
+## First local run
 
-1. Clone this repository and switch to branch `feat/arena-prototype-v0.1.0` while the PR is still under validation.
-2. Open the repository root in **Unity 6000.3.23f1**.
-3. Allow package resolution and script compilation to finish.
+1. Clone the repository and switch to `feat/arena-prototype-v0.1.0` while PR #1 is still under validation.
+2. Open the repository root with Unity `6000.3.23f1`.
+3. Allow package resolution and compilation to finish.
 4. Confirm the Console has zero compile errors.
 5. Run **Tools > Iron Sand Arena > Rebuild Prototype Arena**.
-6. Open `Assets/Scenes/ArenaPrototype.unity` if it is not already open.
-7. Run the EditMode tests.
-8. Press **Play** and execute the checklist in `docs/VALIDATION.md`.
+6. Run all EditMode tests.
+7. Enter Play Mode and execute `docs/VALIDATION.md`.
+8. Return generated `.meta`, `Packages/packages-lock.json`, relevant `ProjectSettings`, Test Runner output, Console evidence, and gameplay observations before merge.
 
-The Builder deliberately requires an explicit menu action. It does **not** create or replace scenes as a domain-load side effect.
+The Builder is explicit by design and will not replace scenes on domain load.
 
-## Prototype goal
+## Core loop under test
 
-The first milestone is deliberately narrow: prove the combat pressure loop before investing in production art.
-
-`enter arena -> survive pressure -> vary light/heavy/guard/dodge decisions -> gain crowd favor -> receive crowd reward -> clear wave -> final victory`
+```text
+enter arena
+  -> survive coordinated pressure
+  -> lock / guard / dodge / attack
+  -> damage or defeat enemy
+  -> earn style + crowd favor
+  -> weapon durability forces adaptation
+  -> swap starter or dropped weapon
+  -> crowd reward sustains run
+  -> clear waves
+  -> victory
+```
 
 ## Architecture
 
 ```text
 Assets/
-  Editor/
-    PrototypeBuilder.cs
+  Editor/PrototypeBuilder.cs
   Scripts/
     Arena/
-      ArenaDirector.cs
-      CrowdFavorSystem.cs
     Combat/
-      Combatant.cs
     Enemy/
-      EnemyGladiator.cs
     Player/
-      PlayerGladiator.cs
-      ThirdPersonArenaCamera.cs
+    Scoring/
     UI/
-      PrototypeHUD.cs
-  Tests/
-    EditMode/
-      CrowdFavorSystemTests.cs
+  Tests/EditMode/
+docs/
+  ARCHITECTURE.md
+  QUALITY_GATES.md
+  VALIDATION.md
+tools/
+  repository_guard.py
 ```
 
-See `docs/ARCHITECTURE.md` for responsibilities and accepted prototype debt.
+See `docs/ARCHITECTURE.md` for ownership boundaries and accepted prototype debt.
 
 ## Validation policy
 
-Repository content is **not** treated as proof of Unity execution. Until a real Unity `6000.3.23f1` session returns compile, Test Runner, Play Mode, and Console evidence, the validation Gate remains **NOT_RUN**.
-
-See `docs/VALIDATION.md` for the exact evidence required before merge.
-
-## What this is not
-
-This is not a remake, ROM recreation, asset extraction project, or reverse-engineered copy of *Shadow of Rome*. It is an original prototype built around broadly usable game-design ideas such as arena combat, crowd scoring, melee hit reactions, and encounter direction.
-
-## Next production gates
-
-1. Pass v0.1.0 local Unity validation with zero compile/runtime errors.
-2. Replace prototype overlap attacks with authored attack windows and weapon hitboxes.
-3. Add target lock-on and combat-facing locomotion.
-4. Add original weapon pickup, durability, throwing, and archetype data.
-5. Add shield / perfect guard / disarm mechanics.
-6. Add executions and contextual arena interactions.
-7. Replace capsule combatants with humanoid rigs + root-motion animation.
-8. Add authored enemy archetypes, bosses, accessibility, and gamepad support.
-9. Replace graybox arena with original Roman-inspired production art.
-
----
+The Draft PR remains **NOT_RUN** for Unity execution until a real Unity `6000.3.23f1` session produces import, compile, Test Runner, Play Mode, and Console evidence. See `docs/QUALITY_GATES.md` and `docs/VALIDATION.md`.
 
 Prototype codename: **Iron Sand Arena**

@@ -38,11 +38,28 @@ namespace IronSand.Tests
         }
 
         [Test]
-        public void ResetFavor_ReturnsToZero()
+        public void AddFavor_CrossesEveryRewardThresholdExactlyOnce()
         {
-            system.AddFavor(40);
+            int rewardCount = 0;
+            system.RewardEarned += _ => rewardCount++;
+
+            system.AddFavor(80);
+
+            Assert.That(rewardCount, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void ResetFavor_RestoresRewardThresholds()
+        {
+            int rewardCount = 0;
+            system.RewardEarned += _ => rewardCount++;
+
+            system.AddFavor(25);
             system.ResetFavor();
-            Assert.That(system.Favor, Is.Zero);
+            system.AddFavor(25);
+
+            Assert.That(system.Favor, Is.EqualTo(25));
+            Assert.That(rewardCount, Is.EqualTo(2));
         }
     }
 }
