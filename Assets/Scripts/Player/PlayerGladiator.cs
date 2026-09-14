@@ -84,7 +84,7 @@ namespace IronSand.Player
             }
         }
 
-        public new bool ApplyDamage(float amount, Vector3 knockback, float stunMultiplier = 1f)
+        public override bool ApplyDamage(float amount, Vector3 knockback, float stunMultiplier = 1f)
         {
             float finalAmount = guarding ? amount * guardDamageMultiplier : amount;
             float finalStun = guarding ? stunMultiplier * 0.35f : stunMultiplier;
@@ -158,7 +158,7 @@ namespace IronSand.Player
                     continue;
                 }
 
-                Vector3 toEnemy = (enemy.transform.position - transform.position);
+                Vector3 toEnemy = enemy.transform.position - transform.position;
                 toEnemy.y = 0f;
                 if (toEnemy.sqrMagnitude < 0.001f || Vector3.Dot(transform.forward, toEnemy.normalized) < 0.15f)
                 {
