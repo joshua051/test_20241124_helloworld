@@ -28,10 +28,10 @@ jobs:
         run: |
           python3 tools/art/inspect_sources.py
           python3 tools/art/build_model_data.py
-      - name: Install actual Blender renderer
+      - name: Install actual Blender renderer and exporter dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends blender
+          sudo apt-get install -y --no-install-recommends blender python3-numpy
           blender --version
       - name: Skin, export and render actual model data
         run: blender --background --factory-startup --disable-autoexec --threads 2 --python-exit-code 1 --python tools/art/render_gladiator.py
