@@ -38,3 +38,9 @@ Pull the feature branch while preserving local edits. The existing generated sce
 - Unity Test Framework command line: https://docs.unity3d.com/Packages/com.unity.test-framework@1.4/manual/reference-command-line.html (test runner lifecycle and result files).
 
 Known gaps: actual Unity compilation, new material import, all skin deformations, collision/timing, controller input, camera/AI feel, standalone launch and long-session performance. Keep PR Draft.
+
+## Final CLI compatibility review
+
+After `d7c3651280b7352e3ff3cd4f488db44d337de51b` passed its two source workflows, the official Unity 6000.3 CLI reference was rechecked. The coordinator's public target names and BuildReport values remain `StandaloneWindows64` / `StandaloneOSX` / `StandaloneLinux64`, but `-buildTarget` now receives the documented aliases `win64` / `osxuniversal` / `linux64`. Added one alias-mapping regression test: the local coordinator suite now has **24 tests PASS**, still fixture tests, not Unity execution. The earlier 23-test result is historical to the preceding revision.
+
+Reference: https://docs.unity3d.com/6000.3/Documentation/Manual/EditorCommandLineArguments.html#build-arguments . Unity execution remains NOT_RUN.

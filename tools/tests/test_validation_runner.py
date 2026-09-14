@@ -20,6 +20,12 @@ class ValidationRunnerTests(unittest.TestCase):
         values = dict(result="Passed", total="1", passed="1", failed="0", skipped="0", inconclusive="0")
         values.update(attrs)
         self.xml.write_text('<test-run ' + ' '.join(f'{k}="{x}"' for k,x in values.items()) + '><test-case fullname="IronSand.Tests.RequiredSuite.Test" result="Passed"/></test-run>')
+    def test_desktop_cli_target_aliases(self):
+        # Public coordinator/receipt enum names differ from Unity CLI aliases.
+        self.assertEqual(v.BUILD_TARGET_ARGUMENTS, {
+            "StandaloneWindows64": "win64", "StandaloneOSX": "osxuniversal",
+            "StandaloneLinux64": "linux64"})
+        self.assertEqual(v.TARGETS, set(v.BUILD_TARGET_ARGUMENTS))
     def test_complete_result_passes(self):
         self.fixture()
         self.assertEqual(v.read_test_result(self.xml, {"RequiredSuite"})["total"], 1)

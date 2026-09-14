@@ -16,7 +16,12 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 EDITOR = "6000.3.23f1"
-TARGETS = {"StandaloneWindows64", "StandaloneOSX", "StandaloneLinux64"}
+BUILD_TARGET_ARGUMENTS = {
+    "StandaloneWindows64": "win64",
+    "StandaloneOSX": "osxuniversal",
+    "StandaloneLinux64": "linux64",
+}
+TARGETS = set(BUILD_TARGET_ARGUMENTS)
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED_SUITES = {
     "EditMode": {"ImportedGladiatorTests", "ArenaRegressionTests", "CombatCoreTests", "StateIntegrityTests"},
@@ -149,7 +154,7 @@ def main(argv: list[str] | None = None) -> int:
         project = run / "Project"
         extract_snapshot(archive, project)
         # Engine writes only into this fresh disposable snapshot, never the caller's scene.
-        common = [str(editor), "-batchmode", "-nographics", "-projectPath", str(project), "-buildTarget", args.target]
+        common = [str(editor), "-batchmode", "-nographics", "-projectPath", str(project), "-buildTarget", BUILD_TARGET_ARGUMENTS[args.target]]
         env = dict(os.environ, IRON_SAND_BUILD_RECEIPT=str(run / "build-receipt.json"))
         summary["status"] = "FAILED"
         result = 1

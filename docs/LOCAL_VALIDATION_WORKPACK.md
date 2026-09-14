@@ -23,7 +23,7 @@ export UNITY_EDITOR=/path/to/6000.3.23f1/Editor/Unity
 bash tools/validate_unity.sh
 ```
 
-Equivalent cross-platform command: `python tools/run_unity_validation.py --unity <editor> --target StandaloneWindows64`. Supported targets also include `StandaloneOSX` and `StandaloneLinux64`; a module not installed in Unity is a blocker, not a reason to silently change the target.
+Equivalent cross-platform command: `python tools/run_unity_validation.py --unity <editor> --target StandaloneWindows64`. The runner maps these enum names to Unity CLI aliases (`win64`, `osxuniversal`, `linux64`) while verifying the enum name in the build receipt. Supported targets also include `StandaloneOSX` and `StandaloneLinux64`; a module not installed in Unity is a blocker, not a reason to silently change the target.
 
 ## Preservation and reproducibility
 
