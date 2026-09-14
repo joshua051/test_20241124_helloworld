@@ -1,0 +1,10 @@
+{
+  "name": "IronSand.Tests.EditMode",
+  "rootNamespace": "IronSand.Tests",
+  "references": ["IronSand.Runtime"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": false,
+  "overrideReferences": false,
+  "noEngineReferences": false
+}
