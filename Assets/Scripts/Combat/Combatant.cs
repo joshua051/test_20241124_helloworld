@@ -1,4 +1,5 @@
 using System;
+using IronSand.Telemetry;
 using UnityEngine;
 
 namespace IronSand.Combat
@@ -51,6 +52,7 @@ namespace IronSand.Combat
             if (!Finite(impact.Damage) || !Finite(impact.PoiseDamage) || !Finite(impact.StunMultiplier)) return ImpactResult.Ignored;
             if (impact.Damage <= 0f && impact.PoiseDamage <= 0f && !impact.Execution) return ImpactResult.Ignored;
             float previousHealth = health;
+            float previousPoise = Poise;
             float appliedDamage = impact.Execution ? maxHealth + 1f : Mathf.Max(0f, impact.Damage);
             health = Mathf.Max(0f, health - appliedDamage);
             bool poiseBroken = impact.Execution || (poise != null && poise.Apply(Mathf.Max(0f, impact.PoiseDamage)));
@@ -64,6 +66,16 @@ namespace IronSand.Combat
             OnDamaged(impact.Knockback);
             if (killed) OnDeath();
             if (!Mathf.Approximately(previousHealth, health)) HealthChanged?.Invoke(health, maxHealth);
+            TelemetryRecorder.RecordEvent(
+                impact.Execution ? "execution_impact" : "impact",
+                impact.Source != null ? impact.Source.name : null,
+                name,
+                null,
+                impact.Execution ? AttackKind.Execution : null,
+                previousHealth - health,
+                Mathf.Max(0f, previousPoise - Poise),
+                transform.position,
+                FormattableString.Invariant($"{{\"hp_before\":{previousHealth:0.###},\"hp_after\":{health:0.###},\"poise_before\":{previousPoise:0.###},\"poise_after\":{Poise:0.###},\"poise_broken\":{poiseBroken.ToString().ToLowerInvariant()},\"killed\":{killed.ToString().ToLowerInvariant()}}}"));
             if (killed) Died?.Invoke(this);
             return new ImpactResult(true, false, false, poiseBroken, killed, previousHealth - health);
         }
@@ -72,7 +84,12 @@ namespace IronSand.Combat
         {
             if (IsDead || !Finite(amount) || amount <= 0f) return;
             float previous = health; health = Mathf.Min(maxHealth, health + amount);
-            if (!Mathf.Approximately(previous, health)) HealthChanged?.Invoke(health, maxHealth);
+            if (!Mathf.Approximately(previous, health))
+            {
+                HealthChanged?.Invoke(health, maxHealth);
+                TelemetryRecorder.RecordEvent("heal", null, name, null, null, health - previous, null, transform.position,
+                    FormattableString.Invariant($"{{\"hp_before\":{previous:0.###},\"hp_after\":{health:0.###}}}"));
+            }
         }
         public void GrantInvulnerability(float seconds) { if (Finite(seconds) && seconds > 0f) invulnerableRemaining = Mathf.Max(invulnerableRemaining, seconds); }
         protected abstract void OnDamaged(Vector3 knockback);
