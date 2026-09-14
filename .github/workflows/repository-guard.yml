@@ -1,0 +1,28 @@
+name: Repository Guard
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  repository-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout pinned source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate repository invariants
+        run: python3 tools/repository_guard.py
+      - name: Compile and run pure combat rules
+        run: dotnet run --project tools/CombatRulesHarness/CombatRulesHarness.csproj --configuration Release
+      - name: Validate SQLite telemetry pipeline
+        run: |
+          python3 tools/telemetry/telemetry_db.py --db /tmp/iron_sand.sqlite3 init
+          python3 tools/telemetry/telemetry_db.py --db /tmp/iron_sand.sqlite3 ingest-status
+          python3 tools/telemetry/telemetry_db.py --db /tmp/iron_sand.sqlite3 query "SELECT COUNT(*) AS dimensions FROM latest_progress"
+          python3 tools/telemetry/telemetry_db.py --db /tmp/iron_sand.sqlite3 query "SELECT COUNT(*) AS gates FROM latest_gates"

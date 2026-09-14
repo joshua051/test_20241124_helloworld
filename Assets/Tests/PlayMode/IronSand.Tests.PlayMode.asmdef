@@ -1,0 +1,14 @@
+{
+  "name": "IronSand.Tests.PlayMode",
+  "rootNamespace": "IronSand.Tests",
+  "references": [
+    "IronSand.Runtime"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "includePlatforms": [],
+  "autoReferenced": false,
+  "overrideReferences": false,
+  "noEngineReferences": false
+}

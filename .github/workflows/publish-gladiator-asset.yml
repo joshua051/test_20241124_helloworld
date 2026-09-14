@@ -1,0 +1,41 @@
+name: Publish Inspected Gladiator Asset
+
+on:
+  push:
+    branches: [feat/arena-prototype-v0.1.0]
+    paths: ['.github/workflows/publish-gladiator-asset.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: publish-inspected-gladiator
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Checkout current feature branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: feat/arena-prototype-v0.1.0
+          fetch-depth: 0
+      - name: Verify inspected artifact and publish only allowlisted assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/publish_gladiator_artifact.py \
+            --run-id 34852977089 \
+            --artifact-id 10351862050 \
+            --artifact-sha256 0418e8a6fed659eccceb52c986f63198fb69d9db748d07bd9283ea8bf175eb16 \
+            --model-sha256 3c2d09fe17dc686f13180f8f33cd5150014f602b05326d90b2b52e5b8eb56ff3
+      - name: Check actual committed mesh buffers and four key-pose deformations
+        run: python3 tools/validate_gladiator_asset.py
+      # The original render artifact remains available from its successful renderer run.
+      # All accepted assets are committed to Art/Gladiator and Assets/Resources/Gladiators.
+      # A bonus whole-repo archive upload failed finalization (403) after successful
+      # publication in run 34854744166; it is not part of this publication gate.

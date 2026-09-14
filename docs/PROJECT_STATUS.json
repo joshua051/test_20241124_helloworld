@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "project": "Iron Sand Arena",
+  "snapshot_kind": "engineering_estimate",
+  "source_commit": "45f9c28f99cc3ad839e2e0100d7b1bcb29aca953",
+  "note": "Percentages are frozen historical engineering estimates from estimate_source_commit, NOT measured current completion. Gate names are canonical from QUALITY_GATES.md. Read exact-commit CI and actual Unity evidence; do not promote gates from source or fixture tests.",
+  "dimensions": [
+    {
+      "key": "arena_framework",
+      "label": "競技場框架",
+      "maturity_percent": 95,
+      "evidence": "generated arena, waves, session lifecycle, restart"
+    },
+    {
+      "key": "character_control",
+      "label": "基本角色控制",
+      "maturity_percent": 92,
+      "evidence": "movement, sprint, lock-on, guard, dodge, pause"
+    },
+    {
+      "key": "weapon_system",
+      "label": "武器資料系統",
+      "maturity_percent": 90,
+      "evidence": "weapon tuning, pickup, swap, durability, throw, drops"
+    },
+    {
+      "key": "multi_enemy_ai",
+      "label": "多人 AI 框架",
+      "maturity_percent": 82,
+      "evidence": "attack tokens, four roles, approach/flank/skirmish behavior"
+    },
+    {
+      "key": "crowd_logic",
+      "label": "Crowd 邏輯",
+      "maturity_percent": 85,
+      "evidence": "favor, queued rewards, player Appeal, physical gifts"
+    },
+    {
+      "key": "melee_combat",
+      "label": "真正近戰系統",
+      "maturity_percent": 82,
+      "evidence": "startup/active/recovery, sweeps, combo buffer, poise, perfect guard"
+    },
+    {
+      "key": "combat_animation",
+      "label": "動畫戰鬥",
+      "maturity_percent": 60,
+      "evidence": "procedural graybox combat rig; authored skeletal clips not yet delivered"
+    },
+    {
+      "key": "hit_reaction",
+      "label": "Hit Reaction",
+      "maturity_percent": 78,
+      "evidence": "poise break, stagger, hit-stop, camera impulse, procedural reaction pose"
+    },
+    {
+      "key": "execution",
+      "label": "Execution",
+      "maturity_percent": 75,
+      "evidence": "vulnerability state, range/LOS gate, timed strike and completion"
+    },
+    {
+      "key": "sor_feel",
+      "label": "SoR 級戰鬥手感",
+      "maturity_percent": 50,
+      "evidence": "systemic pillars implemented; Unity/manual feel validation not yet run"
+    }
+  ],
+  "gates": [
+    {
+      "gate": "R0",
+      "label": "Repository + pure rules + source checks (read exact Actions commit)",
+      "status": "CHECK_ACTIONS",
+      "percent": 0,
+      "notes": "Not a failure score. R0 is commit-specific; latest verified previous source was 16f4a890113ab121bb426adf91d71b6a117c899c, run 34860019894. Read current Actions after this change."
+    },
+    {
+      "gate": "U1",
+      "label": "Unity import/package resolution",
+      "status": "NOT_RUN",
+      "percent": 0
+    },
+    {
+      "gate": "U2",
+      "label": "Unity compile/scene rebuild",
+      "status": "NOT_RUN",
+      "percent": 0
+    },
+    {
+      "gate": "U3",
+      "label": "Automated rules / Unity EditMode",
+      "status": "NOT_RUN",
+      "percent": 0
+    },
+    {
+      "gate": "U4",
+      "label": "PlayMode lifecycle",
+      "status": "NOT_RUN",
+      "percent": 0
+    },
+    {
+      "gate": "U5",
+      "label": "Combat mechanics",
+      "status": "NOT_RUN",
+      "percent": 0
+    },
+    {
+      "gate": "U6",
+      "label": "Arena / Crowd / AI / camera feel",
+      "status": "NOT_RUN",
+      "percent": 0
+    },
+    {
+      "gate": "U7",
+      "label": "Standalone launch / soak",
+      "status": "NOT_RUN",
+      "percent": 0
+    }
+  ],
+  "estimate_source_commit": "45f9c28f99cc3ad839e2e0100d7b1bcb29aca953",
+  "reviewed_parent_commit": "22063f22bfac7fd52e492a313291717253e89b19"
+}

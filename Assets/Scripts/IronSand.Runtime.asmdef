@@ -1,0 +1,7 @@
+{
+  "name": "IronSand.Runtime",
+  "rootNamespace": "IronSand",
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "noEngineReferences": false
+}
