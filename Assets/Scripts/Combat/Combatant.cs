@@ -32,7 +32,7 @@ namespace IronSand.Combat
             invulnerableRemaining = Mathf.Max(0f, invulnerableRemaining - Time.deltaTime);
         }
 
-        public bool ApplyDamage(float amount, Vector3 knockback, float stunMultiplier = 1f)
+        public virtual bool ApplyDamage(float amount, Vector3 knockback, float stunMultiplier = 1f)
         {
             if (IsDead || IsInvulnerable || amount <= 0f)
             {
