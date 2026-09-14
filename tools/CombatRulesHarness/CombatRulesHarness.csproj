@@ -10,6 +10,7 @@
     <Compile Include="../../Assets/Scripts/Combat/AttackKind.cs" Link="Source/AttackKind.cs" />
     <Compile Include="../../Assets/Scripts/Combat/AttackProfile.cs" Link="Source/AttackProfile.cs" />
     <Compile Include="../../Assets/Scripts/Combat/AttackTimeline.cs" Link="Source/AttackTimeline.cs" />
+    <Compile Include="../../Assets/Scripts/Combat/CombatPhase.cs" Link="Source/CombatPhase.cs" />
     <Compile Include="../../Assets/Scripts/Combat/DodgeState.cs" Link="Source/DodgeState.cs" />
     <Compile Include="../../Assets/Scripts/Combat/ExecutionState.cs" Link="Source/ExecutionState.cs" />
     <Compile Include="../../Assets/Scripts/Combat/GuardState.cs" Link="Source/GuardState.cs" />
