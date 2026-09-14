@@ -1,3 +1,4 @@
+using IronSand.Art;
 using UnityEngine;
 
 namespace IronSand.Combat
@@ -5,10 +6,12 @@ namespace IronSand.Combat
     public sealed class ProceduralCombatRig : MonoBehaviour
     {
         private Transform torso, head, leftArm, rightArm, leftLeg, rightLeg, shield, weaponSocket;
+        private ImportedGladiatorVisual imported;
         private bool built, playerTeam, guarding, executionActor;
         private float locomotion, attackProgress, hitReaction, vulnerableAmount, executionProgress, walkPhase;
         private CombatPhase attackPhase;
         private AttackKind attackKind;
+        public bool UsesImportedModel => imported != null;
         public Transform WeaponSocket { get { EnsureBuilt(); return weaponSocket; } }
         private void Awake() { EnsureBuilt(); }
         public void ConfigureTeam(bool isPlayer) { playerTeam = isPlayer; EnsureBuilt(); ApplyTeamColor(); }
@@ -27,6 +30,13 @@ namespace IronSand.Combat
                 hitReaction = Mathf.MoveTowards(hitReaction, 0f, Time.deltaTime * 4.5f);
                 walkPhase += Time.deltaTime * 9f;
             }
+            if (imported != null)
+            {
+                imported.ApplyPose(walkPhase, locomotion, guarding, attackPhase, attackProgress,
+                    hitReaction, vulnerableAmount, executionProgress, executionActor);
+                return;
+            }
+            // Keep the existing graybox fallback for a missing/invalid asset. Never call it imported art.
             float walk = Mathf.Sin(walkPhase) * 24f * locomotion;
             float torsoYaw = 0f;
             float torsoRoll = -hitReaction * 16f - vulnerableAmount * 12f;
@@ -66,6 +76,12 @@ namespace IronSand.Combat
             if (rootRenderer != null) rootRenderer.enabled = false;
             Transform oldVisual = transform.Find("BodyVisual");
             if (oldVisual != null) { Renderer renderer = oldVisual.GetComponent<Renderer>(); if (renderer != null) renderer.enabled = false; }
+            if (ImportedGladiatorVisual.TryAttach(transform, playerTeam, out imported))
+            {
+                weaponSocket = imported.WeaponSocket;
+                return;
+            }
+            Debug.LogWarning("Gladiator mesh resource unavailable; using the primitive fallback.", this);
             torso = CreatePart("Rig_Torso", PrimitiveType.Cube, transform, new Vector3(0f, 0.18f, 0f), new Vector3(0.72f, 0.75f, 0.42f));
             head = CreatePart("Rig_Head", PrimitiveType.Sphere, torso, new Vector3(0f, 0.78f, 0f), new Vector3(0.42f, 0.46f, 0.42f));
             leftArm = CreatePart("Rig_LeftArm", PrimitiveType.Cube, torso, new Vector3(-0.56f, 0.22f, 0f), new Vector3(0.22f, 0.78f, 0.22f));
@@ -87,12 +103,13 @@ namespace IronSand.Combat
             part.transform.localPosition = localPosition;
             part.transform.localScale = scale;
             Collider collider = part.GetComponent<Collider>();
-            if (collider != null) { collider.enabled = false; Destroy(collider); }
+            if (collider != null) { collider.enabled = false; if (Application.isPlaying) Destroy(collider); else DestroyImmediate(collider); }
             return part.transform;
         }
         private void ApplyTeamColor()
         {
             if (!built) return;
+            if (imported != null) { imported.ConfigureTeam(playerTeam); return; }
             Color color = playerTeam ? new Color(0.28f, 0.44f, 0.62f) : new Color(0.58f, 0.28f, 0.20f);
             foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true))
             {
