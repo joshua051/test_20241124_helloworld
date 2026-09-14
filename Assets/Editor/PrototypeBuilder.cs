@@ -8,31 +8,22 @@ using UnityEngine.SceneManagement;
 
 namespace IronSand.Editor
 {
-    [InitializeOnLoad]
     public static class PrototypeBuilder
     {
         private const string ScenePath = "Assets/Scenes/ArenaPrototype.unity";
 
-        static PrototypeBuilder()
-        {
-            EditorApplication.delayCall += EnsureSceneExists;
-        }
-
         [MenuItem("Tools/Iron Sand Arena/Rebuild Prototype Arena")]
         public static void RebuildPrototypeArena()
         {
-            BuildScene(saveAndOpen: true);
-        }
-
-        private static void EnsureSceneExists()
-        {
-            if (!AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath))
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             {
-                BuildScene(saveAndOpen: false);
+                return;
             }
+
+            BuildScene();
         }
 
-        private static void BuildScene(bool saveAndOpen)
+        private static void BuildScene()
         {
             if (!AssetDatabase.IsValidFolder("Assets/Scenes"))
             {
@@ -54,11 +45,7 @@ namespace IronSand.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-
-            if (saveAndOpen)
-            {
-                EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            }
+            EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
         }
 
         private static void CreateLighting()
