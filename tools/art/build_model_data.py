@@ -13,7 +13,8 @@ def mix(a,b,t):
 def weights(v,obj):
  x,y,z=v;ax=abs(x);side=0 if x<0 else 3
  if obj.startswith('helmet') or y>=1.555:return [(3,1.)]
- if ax>.22 and y>1.03:
+ # Distal fingers fall below the wrist's Y band; never attach them to the hips.
+ if ax>.22 and (y>1.03 or ax>.35):
   if ax<.30:return mix(2,4+side,(ax-.22)/.08)
   if ax<.425:return [(4+side,1.)]
   if ax<.515:return mix(4+side,5+side,(ax-.425)/.09)
@@ -32,6 +33,18 @@ def weights(v,obj):
  if y<1.24:return mix(0,1,(y-1.08)/.16)
  if y<1.40:return mix(1,2,(y-1.24)/.16)
  return mix(2,3,(y-1.48)/.075)
+def curl_grip(v,n):
+ x,y,z=v;sign=-1. if x<0 else 1.
+ if abs(x)<.665 or y>1.145:return v,n
+ dx=abs(x)-.671;dy=y-1.106
+ along=.8*dx-.6*dy;normal=.6*dx+.8*dy
+ if along<=.060:return v,n
+ theta=min(2.55,(along-.060)/.023)
+ a=.060+.023*math.sin(theta);b=normal-.023*(1-math.cos(theta))
+ point=(sign*(.671+.8*a+.6*b),1.106-.6*a+.8*b,z)
+ nx=sign*n[0];ny=n[1];nd=.8*nx-.6*ny;nb=.6*nx+.8*ny
+ rd=math.cos(theta)*nd+math.sin(theta)*nb;rb=-math.sin(theta)*nd+math.cos(theta)*nb
+ return point,(sign*(.8*rd+.6*rb),-.6*rd+.8*rb,n[2])
 def obj_mesh(path,transform,material_for,skinned=False):
  positions=[];tex=[];norms=[];current='';material='';faces=[]
  for line in path.read_text(encoding='utf-8').splitlines():
@@ -57,7 +70,9 @@ def obj_mesh(path,transform,material_for,skinned=False):
    key=(vi,ti,ni,obj)
    if key not in unique:
     unique[key]=len(result['vertices'])//3
-    point,normal=transform(positions[vi],norms[ni] if ni>=0 else (0,1,0))
+    raw_v=positions[vi];raw_n=norms[ni] if ni>=0 else (0,1,0)
+    if skinned and obj.startswith('char'):raw_v,raw_n=curl_grip(raw_v,raw_n)
+    point,normal=transform(raw_v,raw_n)
     result['vertices'].extend(round(a,7) for a in point);result['normals'].extend(round(a,7) for a in normal);result['uv'].extend(tex[ti] if ti>=0 else (0,0))
     ws=weights(positions[vi],obj) if skinned else [(0,1.)];ws=[p for p in ws if p[1]>0]
     result['boneIndices'].extend([p[0] for p in ws]+[0]*(4-len(ws)));result['weights'].extend([round(p[1],7) for p in ws]+[0.]*(4-len(ws)))
@@ -94,11 +109,9 @@ def build(source,out):
  bones=[{'name':n,'parent':p,'position':[round(v[0]*SCALE,7),round((v[1]+.00044)*SCALE-1,7),round(v[2]*SCALE,7)]} for n,p,v in BONES]
  body=obj_mesh(source/'low-poly-warrior/base-char-male.obj',lambda v,n:((v[0]*SCALE,(v[1]+.00044)*SCALE-1,v[2]*SCALE),n),lambda o,m,c:0 if m=='default' else 2 if o.startswith('torso') and c[1]<1.015 else 1,True)
  pack=source/'gladiator-pack/GladiatorPack/OBJ'
- sword=obj_mesh(pack/'Gladii.obj',lambda v,n:((v[0]*2.1,-v[2]*2.1,(v[1]-.05)*2.1-.48),(n[0],-n[2],n[1])),lambda o,m,c:4 if m=='Metal' else 5 if m=='Belt2' else 3)
- shield=obj_mesh(pack/'Shield.obj',lambda v,n:((v[0]*1.55,(v[1]-.275)*1.55,-v[2]*1.55),(n[0],n[1],-n[2])),lambda o,m,c:3 if m=='Metal' else 2)
- for group in shield['submeshes']:
-  t=group['triangles']
-  for i in range(0,len(t),3):t[i+1],t[i+2]=t[i+2],t[i+1]
+ # Inspection confirmed the source grip lies at Y=.2885; the blade points toward Y=0.
+ sword=obj_mesh(pack/'Gladii.obj',lambda v,n:((v[0]*2.1,(v[2]+.005584)*2.1,(.2885-v[1])*2.1-.48),(n[0],n[2],-n[1])),lambda o,m,c:4 if m=='Metal' else 5 if m=='Belt2' else 3)
+ shield=obj_mesh(pack/'Shield.obj',lambda v,n:((v[0]*1.55,(v[1]-.275)*1.55,v[2]*1.55),n),lambda o,m,c:3 if m=='Metal' else 2)
  data={'schemaVersion':1,'name':'IronSand_CC0_Gladiator_v1','axes':'Y-up +Z-forward; CCW triangles; feet -1m','bones':bones,'materials':mats,'body':body,'sword':sword,'shield':shield}
  def pose(name,changes):return {'name':name,'euler':[{'x':changes.get(i,(0,0,0))[0],'y':changes.get(i,(0,0,0))[1],'z':changes.get(i,(0,0,0))[2]} for i in range(len(bones))]}
  idle={2:(0,-8,0),3:(0,8,0),4:(-8,0,55),5:(0,35,0),6:(-8,0,0),7:(-10,0,-55),8:(0,-35,0),9:(-8,0,0)}
@@ -106,7 +119,7 @@ def build(source,out):
  windup={**idle,2:(0,-28,0),3:(0,15,0),7:(-35,25,-50),8:(0,-30,0)}
  strike={**idle,2:(0,28,-4),3:(0,-12,0),7:(-75,-35,-10),8:(0,-60,0)}
  data['poses']=[pose('idle',idle),pose('guard',guard),pose('windup',windup),pose('strike',strike)]
- data['swordSocket']={'position':[.06,-.038,.015],'euler':[0,0,0]};data['shieldSocket']={'position':[-.035,-.015,.12],'euler':[0,0,-55]}
+ data['swordSocket']={'position':[.024,-.103,.0346],'euler':[0,0,0]};data['shieldSocket']={'position':[-.0608464,-.1475198,.0511348],'euler':[36.11825,-78.9314,-63.65705]}
  counts=validate(data);out.mkdir(parents=True,exist_ok=True)
  (out/'Gladiator.json').write_text(json.dumps(data,separators=(',',':'),allow_nan=False)+'\n',encoding='utf-8')
  for name in ('skin.png','metal2.png'):shutil.copyfile(source/'low-poly-warrior'/name,out/name)
