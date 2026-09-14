@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using IronSand.Combat;
 using IronSand.Player;
+using IronSand.Telemetry;
 using UnityEngine;
 
 namespace IronSand.Arena
@@ -28,6 +29,9 @@ namespace IronSand.Arena
         private void OnRewardEarned(float healAmount)
         {
             pendingRewards.Enqueue(Mathf.Max(0f, healAmount));
+            TelemetryRecorder.RecordEvent("crowd_reward_queued", "Crowd", player != null ? player.name : null, null, null, null, null,
+                player != null ? player.transform.position : Vector3.zero,
+                $"{{\"pending\":{pendingRewards.Count},\"heal_value\":{Mathf.Max(0f, healAmount):0.###}}}");
         }
 
         public bool TryAppeal()
@@ -39,10 +43,13 @@ namespace IronSand.Arena
             float radius = ArenaGeometry.WallRadius - 1.2f;
             Vector3 origin = new(Mathf.Cos(angle) * radius, 6.5f, Mathf.Sin(angle) * radius);
             Vector3 target = player.transform.position + Vector3.up * 0.55f;
-            if (rewardIndex % 2 == 0)
+            bool weaponGift = rewardIndex % 2 == 0;
+            if (weaponGift)
                 SpawnWeaponGift(origin, target, WeaponCatalog.GetArenaWeapon(rewardIndex * 31));
             else
                 SpawnFoodGift(origin, target, healAmount);
+            TelemetryRecorder.RecordEvent("crowd_appeal", player.name, "Crowd", null, null, null, null, player.transform.position,
+                $"{{\"gift_type\":\"{(weaponGift ? "weapon" : "food")}\",\"pending_after\":{pendingRewards.Count}}}");
             return true;
         }
 
@@ -57,6 +64,8 @@ namespace IronSand.Arena
             body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             body.linearVelocity = BallisticVelocity(origin, target, 1.05f);
             gift.AddComponent<CrowdGift>().Initialize(healAmount, player);
+            TelemetryRecorder.RecordEvent("crowd_gift_launched", "Crowd", player != null ? player.name : null, null, null, healAmount, null, origin,
+                "{\"gift_type\":\"food\"}");
         }
 
         private void SpawnWeaponGift(Vector3 origin, Vector3 target, WeaponArchetype weapon)
@@ -71,6 +80,8 @@ namespace IronSand.Arena
             body.angularVelocity = new Vector3(4f, 8f, 6f);
             body.linearVelocity = BallisticVelocity(origin, target, 1.10f);
             gift.AddComponent<CrowdWeaponGift>().Initialize(weapon);
+            TelemetryRecorder.RecordEvent("crowd_gift_launched", "Crowd", player != null ? player.name : null, weapon, null, null, null, origin,
+                "{\"gift_type\":\"weapon\"}");
         }
 
         private static Vector3 BallisticVelocity(Vector3 origin, Vector3 target, float flightTime)
