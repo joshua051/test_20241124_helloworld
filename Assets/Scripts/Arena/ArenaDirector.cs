@@ -98,21 +98,24 @@ namespace IronSand.Arena
 
         private void SpawnEnemy(Vector3 position, int index)
         {
-            GameObject root = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            root.name = $"Enemy_W{WaveNumber}_{index + 1}";
+            GameObject root = new($"Enemy_W{WaveNumber}_{index + 1}");
             root.transform.position = position;
-            root.transform.localScale = new Vector3(0.9f, 1f, 0.9f);
-
-            Collider primitiveCollider = root.GetComponent<Collider>();
-            if (primitiveCollider != null)
-            {
-                Destroy(primitiveCollider);
-            }
 
             CharacterController controller = root.AddComponent<CharacterController>();
             controller.height = 2f;
             controller.radius = 0.45f;
             controller.center = Vector3.zero;
+
+            GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            visual.name = "BodyVisual";
+            visual.transform.SetParent(root.transform, false);
+            visual.transform.localScale = new Vector3(0.9f, 1f, 0.9f);
+            Collider visualCollider = visual.GetComponent<Collider>();
+            if (visualCollider != null)
+            {
+                visualCollider.enabled = false;
+                Destroy(visualCollider);
+            }
 
             WeaponArchetype weapon = WeaponCatalog.GetArenaWeapon(currentWaveIndex * 17 + index);
             EnemyGladiator enemy = root.AddComponent<EnemyGladiator>();

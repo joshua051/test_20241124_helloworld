@@ -18,6 +18,7 @@ namespace IronSand.Enemy
         private CharacterController controller;
         private PlayerGladiator player;
         private ArenaDirector director;
+        private GameObject weaponVisual;
         private float cooldownRemaining;
         private float windupRemaining;
         private bool ownsAttackToken;
@@ -43,6 +44,7 @@ namespace IronSand.Enemy
             attackDamage *= stats.LightDamageMultiplier;
             preferredRange *= Mathf.Clamp(stats.ReachMultiplier, 0.85f, 1.35f);
             attackCooldown *= stats.CooldownMultiplier;
+            weaponVisual = WeaponVisualFactory.CreatePlaceholder(transform, HeldWeapon, new Vector3(0.6f, 0.25f, 0.35f));
         }
 
         protected override void Update()

@@ -7,6 +7,9 @@ namespace IronSand.Player
     public sealed class PlayerWeaponController : MonoBehaviour
     {
         [SerializeField] private WeaponArchetype startingWeapon = WeaponArchetype.Sword;
+        [SerializeField] private Vector3 visualLocalPosition = new(0.62f, 0.25f, 0.42f);
+
+        private GameObject weaponVisual;
 
         public event Action<WeaponArchetype, int, int> LoadoutChanged;
 
@@ -103,7 +106,18 @@ namespace IronSand.Player
 
         private void NotifyChanged()
         {
+            RefreshVisual();
             LoadoutChanged?.Invoke(CurrentWeapon, Durability, MaxDurability);
+        }
+
+        private void RefreshVisual()
+        {
+            if (weaponVisual != null)
+            {
+                Destroy(weaponVisual);
+            }
+
+            weaponVisual = WeaponVisualFactory.CreatePlaceholder(transform, CurrentWeapon, visualLocalPosition);
         }
     }
 }
