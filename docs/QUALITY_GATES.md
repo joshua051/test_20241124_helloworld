@@ -1,75 +1,70 @@
 # Quality Gates
 
-Iron Sand Arena uses evidence-based gates. A later gate cannot erase failure of an earlier gate, and repository content is never treated as proof that Unity executed successfully.
+Iron Sand Arena uses evidence-based gates. Later functionality cannot erase a failure at an earlier gate.
 
 ## R0 — Repository integrity
 
-Automated by `.github/workflows/repository-guard.yml`.
-
 Required:
-- no tracked Unity generated directories (`Library`, `Temp`, `Obj`, `Logs`, `UserSettings`, `MemoryCaptures`)
-- no case-colliding paths
-- no merge-conflict markers in tracked text
-- no tracked file above 20 MiB without an intentional asset/LFS decision
-- required architecture/validation documents present
-- Unity Editor version pinned to `6000.3.23f1`
+- no generated Unity directories tracked
+- no case-colliding paths or merge markers
+- Unity version pinned to `6000.3.23f1`
+- required docs/tests present
+- no unexplained oversized tracked files
 
 ## U1 — Unity import
 
-Required evidence:
-- project opens in Unity `6000.3.23f1`
-- package resolution completes
-- generated `.meta`, `Packages/packages-lock.json`, and material `ProjectSettings` changes are captured for review
+Evidence: project opens in Unity `6000.3.23f1`, packages resolve, genuine `.meta`, `Packages/packages-lock.json`, generated scene and relevant `ProjectSettings` changes are captured.
 
-Status: **NOT_RUN**
+Status: **NOT_RUN for Combat V2**
 
 ## U2 — Compile
 
-Required evidence:
-- zero C# compile errors
-- zero package/compiler exceptions
-- generated arena scene can be rebuilt from the explicit menu command
+Evidence: zero C# compile errors, zero package/compiler exceptions, arena rebuild succeeds.
+
+Status: **NOT_RUN for Combat V2**
+
+## U3 — Automated rules and EditMode
+
+All existing and new tests must pass, including Crowd Favor, WeaponCatalog/state integrity, StyleScoreModel, DodgeState, AttackTimeline, GuardState, PoiseState, ExecutionState and arena geometry/camera regression tests.
+
+Status: **NOT_RUN for Combat V2**
+
+## U4 — PlayMode lifecycle
+
+Required: generated scene loads; player/enemies grounded; procedural combat rigs exist; enemy pressure reaches a committed attack without deadlock; attack-token count remains bounded; Crowd threshold spawns a physical gift; defeat/restart resets state; no recurring exceptions over 10 minutes.
+
+Status: **NOT_RUN for Combat V2**
+
+## U5 — Combat mechanics
+
+Required manual evidence:
+- Light/Heavy show Startup/Active/Recovery and cannot be infinitely cancelled
+- melee hits only during Active frames and no repeat hit per target/attack
+- weapon types differ in timing/reach/Poise
+- hit stop, reaction, camera impulse and impact sound are readable
+- directional guard fails against rear attacks
+- fresh guard can Perfect Guard
+- Perfect Guard counters and disarms
+- Poise break is readable
+- low-health Poise break exposes execution
+- `F` execution kills once and returns control cleanly
+- `G` throws weapon, can damage and leaves player Unarmed
+- pickup/swap/durability/break/drop remains consistent
+
+Status: **NOT_RUN for Combat V2**
+
+## U6 — Arena / Crowd / AI feel
+
+Required: four enemy roles show distinct pressure patterns; attack concurrency stays fair; physical Crowd gifts are collectible; style rewards varied actions/throw/Perfect Guard/execution; three waves complete without soft-lock; camera remains readable.
+
+Status: **NOT_RUN for Combat V2**
+
+## U7 — Standalone build
+
+Required: clean standalone build; launch/restart outside Editor; 20-minute soak; frame-time/GC observations recorded.
 
 Status: **NOT_RUN**
 
-## U3 — Automated tests
+## Production fidelity gate
 
-Required evidence:
-- all EditMode tests pass
-- failures are fixed, never waived without written rationale
-
-Status: **NOT_RUN**
-
-## U4 — Play Mode functional gate
-
-Required evidence:
-- movement/camera/guard/dodge/light/heavy inputs function
-- lock-on acquires/releases valid enemies and camera remains usable
-- starter weapon pickup/swap works
-- weapon durability decreases only after successful hits and can break to Unarmed
-- defeated enemies drop usable weapons
-- style combo expires and varied attacks/weapons score better than immediate repetition
-- crowd rewards trigger at thresholds
-- attack-token concurrency remains bounded
-- all three waves reach Victory
-- no recurring exceptions over a 10-minute run
-
-Status: **NOT_RUN**
-
-## U5 — Combat-feel gate
-
-This is qualitative but still evidence-driven. Record concrete defects for:
-- camera occlusion or nausea
-- input latency
-- hit readability
-- crowding/body blocking
-- dodge distance and invulnerability feel
-- weapon differentiation
-- combo incentive versus repetitive optimal play
-- enemy windup readability
-
-Status: **NOT_RUN**
-
-## U6 — Production-content gate
-
-Not applicable to this graybox milestone. Root-motion animation, authored hitboxes, production art/VFX/audio, accessibility, gamepad support, save progression, executions, perfect guard, disarm, throwing, and bosses remain future work.
+Combat V2 becomes a completed **graybox vertical slice** only after U1–U7 evidence. Production humanoid art, authored animation clips, final audio/VFX and gore/dismemberment presentation remain a separate content-production gate.

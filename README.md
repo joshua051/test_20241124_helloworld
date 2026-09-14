@@ -1,53 +1,94 @@
 # Iron Sand Arena
 
-Original Unity 6 third-person gladiator-arena graybox. No Capcom assets, characters, story, audio, level data, or proprietary code are included.
+Original Unity 6 third-person gladiator-arena combat vertical slice. It is a spiritual design study of classic arena action games, built with original code, generated geometry and original graybox presentation. It contains no Capcom assets, characters, story, audio, levels or proprietary data.
 
-**This is an unvalidated prototype, not a finished action game.** The player and enemies are primitive placeholders. Melee currently uses an immediate overlap query plus cooldown, not a humanoid attack animation or an animation-driven weapon sweep. Crowd rewards are threshold healing, not animated spectators throwing items.
+## Current branch target: Combat Vertical Slice 2.0
 
-## Current source scope
+The current Draft PR moves the prototype from immediate button-to-damage queries toward a real combat pipeline:
 
-Movement/sprint, light/heavy damage, non-directional guard, timed dodge with cooldown, target lock, weapon pickups/swap/durability/drops, style/combo scoring, crowd favor, three waves, graybox world, debug HUD. The playability patch also adds flat arena collision, runtime camera rebinding and basic world obstruction, enemy gravity and HUD windup markers, pause/resume, focus-loss pause and scene restart.
+- data-driven Startup / Active / Recovery attack timelines
+- procedural root-motion-equivalent attack displacement
+- swept melee volume during Active frames; one hit per target per attack
+- weapon-specific cadence, reach, poise damage, hit stop and movement
+- directional guard with a short Perfect Guard window
+- Perfect Guard counter-stagger and disarm
+- health + Poise + stagger + execution-ready state
+- contextual execution on vulnerable locked targets
+- timed dodge and invulnerability
+- weapon pickup / swap / durability / break / enemy drops
+- weapon throwing with physical projectile collision and recoverable durability
+- target lock and combat-facing movement
+- procedural graybox humanoid combat poses, locomotion, guard, hit reaction and execution posing
+- hit stop, camera impulse, transient impact VFX and runtime-generated impact audio
+- four enemy roles plus central attack-token concurrency
+- three encounter waves
+- Style / combo / variety / kill / Perfect Guard / throw / execution scoring
+- physical Crowd reward throws instead of direct threshold healing
+- visible crowd ring around the arena
+- pause / resume / restart lifecycle
 
-These are **implemented in source, awaiting Unity validation**. See `docs/PLAYABILITY_AUDIT.md` for defects found in the preceding revision and exact patch scope.
+This remains a **graybox combat vertical slice**, not a production remake. The procedural rigs and generated audio are placeholders designed to validate timing, feedback and system interaction before production character art, authored motion-capture animation and final sound are commissioned.
 
-## First run / update
+## Engine
 
-1. Use branch `feat/arena-prototype-v0.1.0` of this repository while PR #1 is Draft. Preserve local edits before pulling; do not reset/clean them away.
-2. Open the repository root in Unity **6000.3.23f1**. Let packages resolve and scripts compile.
-3. Check **Edit > Project Settings > Player > Active Input Handling**: this graybox requires **Input Manager (Old)** or **Both**. Restart the Editor when requested. This is not a migration to the new Input System.
-4. Exit Play Mode. Run **Tools > Iron Sand Arena > Rebuild Prototype Arena**. Save a copy first if you hand-edited the old generated scene. Rebuilding is mandatory for this patch: scripts alone do not repair an already-saved floor collider or add the new session component.
-5. The builder saves `Assets/Scenes/ArenaPrototype.unity` and enables it in the Editor build scene list. If a custom Build Profile overrides that list, enable this scene there as well.
-6. Run all EditMode tests, then the PlayMode `ArenaSmokeTests`, then the manual checklist in `docs/VALIDATION.md`.
-7. Enter Play Mode, click Game view, and test the round. The updated HUD says `GRAYBOX / UNVALIDATED`.
-
-No scene mutation is performed on domain load. A batch-only builder entry point is available as `IronSand.Editor.PrototypeBuilder.BuildForValidation`; run it only in a disposable validation checkout because it replaces the generated scene.
+- Unity `6000.3.23f1`
+- legacy Input Manager for this branch (`Input Manager (Old)` or `Both`)
+- Unity Test Framework
+- no paid assets
 
 ## Controls
 
 | Input | Action |
 |---|---|
 | WASD / Shift | Move / sprint |
-| Mouse | Orbit; adjust pitch when target-locked |
-| Left / right mouse | Immediate prototype light / heavy hit |
-| Q | Hold guard (not directional/perfect guard) |
-| Space + direction | Timed dodge; no direction dodges backward |
-| Tab | Lock / unlock a visible target |
-| E | Swap nearest weapon |
-| Esc | Pause / resume; restore cursor capture |
-| R | Restart while paused, defeated or victorious |
+| Mouse | Orbit camera |
+| LMB | Light attack |
+| RMB | Heavy attack |
+| Q | Directional guard; newly pressed guard can Perfect Guard |
+| Space + direction | Dodge |
+| Tab | Lock / unlock target |
+| E | Pick up / swap nearest visible weapon |
+| G | Throw equipped weapon |
+| F | Execute a vulnerable locked target |
+| Esc | Pause / resume |
+| R | Restart while paused / defeated / victorious |
 
-Pause, Resume and Restart buttons are also available in the overlay. Attack, guard, pickup and dodge are mutually gated; spamming Space does not bypass the cooldown. The HUD `ATTACK INCOMING` marker is a debug telegraph, not a substitute for production animation.
+## First run after pulling this revision
 
-## Not implemented
+1. Preserve local edits before pulling the Draft branch `feat/arena-prototype-v0.1.0`.
+2. Open the repository with Unity `6000.3.23f1` and let packages/scripts import.
+3. Set **Active Input Handling** to `Input Manager (Old)` or `Both` if required, then restart the Editor.
+4. Exit Play Mode.
+5. Run **Tools > Iron Sand Arena > Rebuild Prototype Arena**. This is mandatory because the generated scene receives new runtime systems and crowd geometry.
+6. Run all EditMode tests.
+7. Run the PlayMode `ArenaSmokeTests`.
+8. Execute `docs/VALIDATION.md` and return real Console/Test Runner/Play Mode/standalone evidence before merge.
 
-Humanoid rigs, root-motion/attack/reaction animation, animation-event weapon sweeps, directional/perfect guard, shields, disarm, thrown weapons, executions, audience actors/audio/item throws, production UI/VFX/art, NavMesh obstacle routing, authored enemy archetypes/bosses, gamepad, save/progression/career, full accessibility settings.
+## Combat loop
 
-World occlusion and steering remain prototype implementations, not a production camera/AI solution. Broad-phase physics queries allocate; performance targets and long-session stability remain unverified.
+```text
+enter arena
+ -> read enemy pressure and windups
+ -> lock / reposition
+ -> light or heavy attack through startup/active/recovery
+ -> hit stop + reaction + poise damage
+ -> guard / Perfect Guard -> stagger + disarm
+ -> weapon breaks, swap or throw it
+ -> vary actions to build style and Crowd Favor
+ -> spectators physically throw recovery gifts
+ -> poise-break weakened enemy -> execution window
+ -> execute or continue pressure
+ -> clear waves -> victory
+```
 
-## Validation
+## Validation policy
 
-Repository Guard is a source-hygiene check, not a C# compiler or Unity test. No Unity PASS is asserted for this patch. Merge remains blocked on actual import/compile, EditMode, PlayMode, manual controls and standalone-build evidence.
+Repository code is not proof that Unity executed it. PR #1 stays Draft until `docs/QUALITY_GATES.md` is evidenced. Any item not actually run in Unity is `NOT_RUN`, never implied PASS.
 
-Return the exact tested commit, Unity version, Console/Editor logs, Test Runner XML, short gameplay capture, and real Unity-generated `.meta`, `Packages/packages-lock.json`, relevant `ProjectSettings`, and the generated scene. Never invent those files or test results.
+See:
+- `docs/ARCHITECTURE.md`
+- `docs/COMBAT_V2.md`
+- `docs/QUALITY_GATES.md`
+- `docs/VALIDATION.md`
 
-Architecture: `docs/ARCHITECTURE.md`; policy: `docs/QUALITY_GATES.md`; current defects/fixes: `docs/PLAYABILITY_AUDIT.md`; acceptance: `docs/VALIDATION.md`.
+Prototype codename: **Iron Sand Arena**

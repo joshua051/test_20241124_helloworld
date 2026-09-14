@@ -1,64 +1,93 @@
-# Validation Gate - playability repair
+# Validation Gate — Combat Vertical Slice 2.0
 
-Repository files and source review do not prove Unity import, compilation or gameplay. Preserve the gate hierarchy in `docs/QUALITY_GATES.md`; use `docs/PLAYABILITY_AUDIT.md` as the current defect ledger.
+Test exact commit and record it. Do not report PASS from source review alone.
 
-## Import and scene preparation
+## Import / compile
+- [ ] Unity `6000.3.23f1`
+- [ ] packages resolved
+- [ ] Console has 0 compile errors
+- [ ] **Tools > Iron Sand Arena > Rebuild Prototype Arena** succeeds
+- [ ] generated scene, `.meta`, `Packages/packages-lock.json` and relevant `ProjectSettings` captured
 
-- [ ] Record exact Git commit, Unity 6000.3.23f1, OS and hardware.
-- [ ] Preserve local edits before pulling; do not use destructive reset/clean.
-- [ ] Package resolution and compilation finish with zero errors.
-- [ ] Active Input Handling is Input Manager (Old) or Both; apply requested Editor restart.
-- [ ] Exit Play Mode and explicitly rebuild ArenaPrototype using the menu. Preserve a copy of hand-edited generated scenes.
-- [ ] Scene contains ArenaSession, one enabled AudioListener, a 30-unit diameter floor with MeshCollider and tangential walls.
-- [ ] ArenaPrototype is enabled in the active build scene list / Build Profile override.
-- [ ] Capture genuine `.meta`, package lock, generated scene and relevant ProjectSettings changes.
+## Automated
+- [ ] all EditMode tests pass
+- [ ] `CombatCoreTests` pass
+- [ ] `StateIntegrityTests` pass
+- [ ] all pre-existing regression tests pass
+- [ ] all PlayMode `ArenaSmokeTests` pass
 
-## Automated Unity tests
+## Attack pipeline
+- [ ] LMB has visible startup, active swing and recovery
+- [ ] RMB is slower/heavier than LMB
+- [ ] player cannot spam through recovery
+- [ ] active swing hits each target at most once per attack
+- [ ] attacks do not damage through solid scenery
+- [ ] Sword/Axe/Spear/Mace differ in timing, reach and Poise effect
 
-- [ ] Existing CrowdFavorSystemTests, WeaponCatalogTests and StyleScoreModelTests pass.
-- [ ] All 10 ArenaRegressionTests cases pass (including parameterized variants).
-- [ ] Both ArenaSmokeTests PlayMode cases pass against the rebuilt scene.
-- [ ] Save original Test Runner XML and Editor log with exact tested commit. No failures or unexpected exception logs.
+## Defense / reactions
+- [ ] Q blocks only front-arc attacks
+- [ ] rear attack bypasses guard
+- [ ] newly pressed Q can Perfect Guard
+- [ ] held Q outside perfect window gives ordinary block
+- [ ] Perfect Guard counter-staggers and disarms armed enemy
+- [ ] light/heavy hits produce readable reactions
+- [ ] Poise break produces stronger stagger
+- [ ] hit stop/camera/audio/VFX are synchronized enough to read the hit
 
-## Manual controls and collision
+## Execution
+- [ ] weaken enemy below execution threshold and break Poise
+- [ ] HUD displays `EXECUTE [F]`
+- [ ] F starts only inside range/line-of-sight
+- [ ] execution strike occurs once
+- [ ] target dies once and state cleans safely
+- [ ] player regains control
 
-- [ ] Player and all enemies stand on the same flat floor; no floating, sliding off a capsule surface or falling at spawn.
-- [ ] Walk/sprint around the entire perimeter; walls have no escape gaps.
-- [ ] Mouse orbit works; Tab locks/unlocks a valid target, strafing faces it, camera follows after scene reload.
-- [ ] Camera avoids walls/pillars from several angles without severe clipping or jitter.
-- [ ] Esc pauses combat and frees the cursor. Esc/Resume recaptures it; a resume click does not attack.
-- [ ] Focus loss pauses. Alt-tab back allows explicit resume without a stuck cursor.
-- [ ] WASD/Shift work in both Editor and standalone build.
+## Weapons
+- [ ] starts with Gladius
+- [ ] Axe/Spear/Mace starter pickups exist
+- [ ] E swaps nearest visible pickup; cannot pick through wall
+- [ ] previous usable weapon drops
+- [ ] durability consumes only after landed melee attack, once per attack
+- [ ] break -> Unarmed
+- [ ] G throws current weapon and leaves player Unarmed
+- [ ] thrown collision can damage enemy
+- [ ] surviving thrown durability can return as pickup
+- [ ] defeated armed enemy drops weapon
 
-## Combat and weapons
+## Crowd / style
+- [ ] varied actions score effectively
+- [ ] Throw, Perfect Guard and Execution add style
+- [ ] Crowd threshold launches a visible physical gift
+- [ ] gift traverses arena physics and heals only when reached
+- [ ] no direct invisible threshold Heal remains
 
-- [ ] Light/heavy attacks cause damage, heavy has a longer recovery, both stop at solid scenery.
-- [ ] Guard reduces damage; it cannot be combined with an attack or active dodge.
-- [ ] Dodge travels over time, has a real recovery gap, and repeated Space cannot chain uninterrupted invulnerability.
-- [ ] At 30/60/144 FPS, dodge distance and mouse sensitivity remain comparable.
-- [ ] HUD enemy windup warnings are visible and stepping out of the committed direction avoids the strike.
-- [ ] No more than two committed enemy attacks occur at once throughout a full run, including interrupts/deaths.
-- [ ] Player starts with Gladius; Axe/Spear/Mace pickups exist. E selects the nearest usable pickup.
-- [ ] Swaps drop the old usable weapon near the floor; enemy drops are reachable.
-- [ ] Hits consume durability once per attack, heavy consumes more, whiffs consume none, break changes to Unarmed.
-- [ ] Weapon tuning changes damage/range/cadence. Current static weapon geometry is not mistaken for a finished swing animation.
+## AI / encounter
+- [ ] Aggressor presses more often
+- [ ] Flanker orbits more
+- [ ] Brute is slower/heavier
+- [ ] Skirmisher prefers more space
+- [ ] enemy outside acquisition range always closes distance
+- [ ] no more than two attackers hold tokens
+- [ ] stunned/execution-ready/dead enemies release tokens
+- [ ] all three waves reach Victory
 
-## Score, crowd and lifecycle
+## Lifecycle / soak
+- [ ] Esc pause/resume and focus-loss pause
+- [ ] R restart after pause/defeat/victory
+- [ ] restart resets time scale, health, weapon, score, crowd, wave and camera binding
+- [ ] 10-minute Editor soak has no recurring exception/soft-lock
+- [ ] standalone build launches/restarts
+- [ ] 20-minute standalone soak logged
 
-- [ ] Hit/variety/kill scoring, combo timeout, ranks and crowd threshold healing work.
-- [ ] Final kill transitions only after the intermission; display never becomes 4/3.
-- [ ] Target clears on death/out-of-range. All three waves can be cleared.
-- [ ] After defeat AND victory, R and the Restart button work without leaving Play Mode.
-- [ ] Repeat restart three times: HP, wave, weapons, score, enemies, camera binding and time scale reset; no duplicate listeners/systems.
-- [ ] Repeating pause/resume/restart produces no recurring exceptions in a 10-minute session.
-- [ ] A local standalone build starts, pauses, resumes, completes/loses and restarts using the included scene.
-
-## Evidence to return
-
-Exact commit + Unity version; full Editor/Console log; EditMode and PlayMode XML; Game view screenshot; short capture showing lock, dodge recovery, hit, pickup, intermission and restart; generated Unity assets/settings; standalone build result and observed defects. Redact machine-specific usernames/paths before posting public logs.
-
-User feedback that an earlier version launched is recorded, but it is not a substitute for these tests.
+## Evidence package
+1. exact Git commit SHA
+2. Unity version/Editor log
+3. zero-error Console evidence
+4. EditMode + PlayMode Test Runner summaries/XML
+5. 60–120 second capture: attack phases, Perfect Guard/disarm, throw, Poise break, execution and Crowd gift
+6. genuine generated Unity metadata/lock/scene/settings files
+7. defects with reproduction steps
 
 ## Gate status
 
-**NOT_RUN for this repair revision in Unity.** Source checks and numerical geometry checks must be reported separately from Unity compilation, Test Runner and actual gameplay. Keep PR #1 Draft; do not mark merge-ready without the evidence above.
+**NOT_RUN** — Combat V2 source is authored/static-reviewed only until real Unity evidence is returned.

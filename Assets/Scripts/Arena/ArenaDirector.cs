@@ -26,114 +26,45 @@ namespace IronSand.Arena
         public int ActiveAttackers => attackTokens.Count;
         public float IntermissionRemaining { get; private set; }
         public bool Victory { get; private set; }
-
         private void Start()
         {
-            if (player == null) player = FindFirstObjectByType<PlayerGladiator>();
-            if (crowdFavor == null) crowdFavor = FindFirstObjectByType<CrowdFavorSystem>();
-            if (styleSystem == null) styleSystem = FindFirstObjectByType<CombatStyleSystem>();
-            if (player == null || crowdFavor == null || styleSystem == null || TotalWaves == 0)
-            {
-                Debug.LogError("Arena setup incomplete. Rebuild the prototype scene.", this);
-                enabled = false;
-                return;
-            }
-            crowdFavor.RewardEarned += player.Heal;
+            if (player == null) player = FindFirstObjectByType<PlayerGladiator>(); if (crowdFavor == null) crowdFavor = FindFirstObjectByType<CrowdFavorSystem>(); if (styleSystem == null) styleSystem = FindFirstObjectByType<CombatStyleSystem>();
+            if (player == null || crowdFavor == null || styleSystem == null || TotalWaves == 0) { Debug.LogError("Arena setup incomplete. Rebuild the prototype scene.", this); enabled = false; return; }
             BeginNextWave();
         }
-
         private void Update()
         {
             if (!nextWavePending || Victory || player == null || player.IsDead || Time.timeScale <= 0f || Time.deltaTime <= 0f) return;
-            IntermissionRemaining = Mathf.Max(0f, IntermissionRemaining - Time.deltaTime);
-            if (IntermissionRemaining <= 0f)
-            {
-                nextWavePending = false;
-                BeginNextWave();
-            }
+            IntermissionRemaining = Mathf.Max(0f, IntermissionRemaining - Time.deltaTime); if (IntermissionRemaining <= 0f) { nextWavePending = false; BeginNextWave(); }
         }
-
-        private void OnDestroy()
-        {
-            if (player != null && crowdFavor != null) crowdFavor.RewardEarned -= player.Heal;
-            foreach (EnemyGladiator enemy in aliveEnemies)
-                if (enemy != null) enemy.Died -= OnEnemyDied;
-            attackTokens.Clear();
-        }
-
+        private void OnDestroy() { foreach (EnemyGladiator enemy in aliveEnemies) if (enemy != null) enemy.Died -= OnEnemyDied; attackTokens.Clear(); }
         public bool TryAcquireAttackToken(EnemyGladiator enemy)
         {
             attackTokens.RemoveWhere(entry => entry == null || entry.IsDead || !entry.isActiveAndEnabled);
-            if (Victory || player == null || player.IsDead || enemy == null || enemy.IsDead ||
-                !aliveEnemies.Contains(enemy) || attackTokens.Contains(enemy) || attackTokens.Count >= maxConcurrentAttackers)
-                return false;
-            attackTokens.Add(enemy);
-            return true;
+            if (Victory || player == null || player.IsDead || enemy == null || enemy.IsDead || !aliveEnemies.Contains(enemy) || attackTokens.Contains(enemy) || attackTokens.Count >= maxConcurrentAttackers) return false;
+            attackTokens.Add(enemy); return true;
         }
-
-        public void ReleaseAttackToken(EnemyGladiator enemy)
-        {
-            if (enemy != null) attackTokens.Remove(enemy);
-        }
-
+        public void ReleaseAttackToken(EnemyGladiator enemy) { if (enemy != null) attackTokens.Remove(enemy); }
         public void RegisterPlayerHit(AttackKind attack, WeaponArchetype weapon, bool kill, int extraFavor)
         {
-            int favor = 1 + Mathf.Max(0, extraFavor);
-            if (styleSystem != null)
-            {
-                StyleAward award = styleSystem.RegisterHit(attack, weapon, kill);
-                favor = award.Favor + Mathf.Max(0, extraFavor);
-            }
+            int favor = 1 + Mathf.Max(0, extraFavor); if (styleSystem != null) { StyleAward award = styleSystem.RegisterHit(attack, weapon, kill); favor = award.Favor + Mathf.Max(0, extraFavor); }
             crowdFavor?.AddFavor(favor);
         }
-
         private void BeginNextWave()
         {
-            currentWaveIndex++;
-            if (currentWaveIndex >= TotalWaves) { Victory = true; return; }
-            int count = Mathf.Max(1, enemiesPerWave[currentWaveIndex]);
-            float radius = Mathf.Clamp(spawnRadius, 2f, ArenaGeometry.WallRadius - 2f);
-            for (int i = 0; i < count; i++)
-            {
-                float angle = Mathf.PI * 2f * i / count + currentWaveIndex * 0.37f;
-                SpawnEnemy(new Vector3(Mathf.Cos(angle) * radius, 1.1f, Mathf.Sin(angle) * radius), i);
-            }
+            currentWaveIndex++; if (currentWaveIndex >= TotalWaves) { Victory = true; return; }
+            int count = Mathf.Max(1, enemiesPerWave[currentWaveIndex]); float radius = Mathf.Clamp(spawnRadius, 2f, ArenaGeometry.WallRadius - 2f);
+            for (int i = 0; i < count; i++) { float angle = Mathf.PI * 2f * i / count + currentWaveIndex * 0.37f; SpawnEnemy(new Vector3(Mathf.Cos(angle) * radius, 1.1f, Mathf.Sin(angle) * radius), i); }
         }
-
         private void SpawnEnemy(Vector3 position, int index)
         {
-            GameObject root = new($"Enemy_W{WaveNumber}_{index + 1}");
-            root.transform.position = position;
-            CharacterController controller = root.AddComponent<CharacterController>();
-            controller.height = 2f;
-            controller.radius = 0.45f;
-            controller.center = Vector3.zero;
-            GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            visual.name = "BodyVisual";
-            visual.transform.SetParent(root.transform, false);
-            visual.transform.localScale = new Vector3(0.9f, 1f, 0.9f);
-            Collider visualCollider = visual.GetComponent<Collider>();
-            visualCollider.enabled = false;
-            Destroy(visualCollider);
-            WeaponArchetype weapon = WeaponCatalog.GetArenaWeapon(currentWaveIndex * 17 + index);
-            EnemyGladiator enemy = root.AddComponent<EnemyGladiator>();
-            enemy.Initialize(player, this, weapon);
-            enemy.Died += OnEnemyDied;
-            aliveEnemies.Add(enemy);
+            GameObject root = new($"Enemy_W{WaveNumber}_{index + 1}"); root.transform.position = position; CharacterController controller = root.AddComponent<CharacterController>(); controller.height = 2f; controller.radius = 0.45f; controller.center = Vector3.zero;
+            WeaponArchetype weapon = WeaponCatalog.GetArenaWeapon(currentWaveIndex * 17 + index); EnemyRole role = (EnemyRole)((currentWaveIndex + index) % 4); EnemyGladiator enemy = root.AddComponent<EnemyGladiator>(); enemy.Initialize(player, this, weapon, role); enemy.Died += OnEnemyDied; aliveEnemies.Add(enemy);
         }
-
         private void OnEnemyDied(Combatant combatant)
         {
-            if (combatant is not EnemyGladiator enemy) return;
-            enemy.Died -= OnEnemyDied;
-            ReleaseAttackToken(enemy);
-            aliveEnemies.Remove(enemy);
-            if (aliveEnemies.Count == 0 && !Victory)
-            {
-                // Do not spawn a new encounter inside a damage/death callback.
-                nextWavePending = true;
-                IntermissionRemaining = intermissionSeconds;
-            }
+            if (combatant is not EnemyGladiator enemy) return; enemy.Died -= OnEnemyDied; ReleaseAttackToken(enemy); aliveEnemies.Remove(enemy);
+            if (aliveEnemies.Count == 0 && !Victory) { nextWavePending = true; IntermissionRemaining = intermissionSeconds; }
         }
     }
 }
